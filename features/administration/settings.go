@@ -37,6 +37,15 @@ func (manager *settingsManager) Get() (Settings, error) {
 	return settings, err
 }
 
+func (manager *settingsManager) UpdateRegistrationEnabled(enabled bool) error {
+	settings, err := manager.Get()
+	if err != nil {
+		return err
+	}
+	settings.RegistrationEnabled = enabled
+	return manager.repository.Save(settings)
+}
+
 func newSettingsManager(repository SettingsRepository) *settingsManager {
 	return &settingsManager{
 		repository: repository,

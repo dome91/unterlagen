@@ -11,6 +11,11 @@ type UserRepository struct {
 	store map[string]administration.User
 }
 
+// FindAll implements administration.UserRepository.
+func (u *UserRepository) FindAll() ([]administration.User, error) {
+	panic("unimplemented")
+}
+
 // ExistsByRole implements administration.UserRepository.
 func (u *UserRepository) ExistsByRole(role administration.UserRole) bool {
 	for _, user := range u.store {

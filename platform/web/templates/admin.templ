@@ -1,7 +1,138 @@
 package templates
 
-templ Administration(notifications []Notification) {
-	@unauthenticatedLayout(notifications) {
-		<h1>Administration</h1>
+import "unterlagen/features/administration"
+
+templ Administration(notifications []Notification, settings administration.Settings, users []administration.User, currentTab string) {
+	@authenticatedLayout(notifications, PageAdmin) {
+		<div class="max-w-4xl mx-auto">
+			<h1 class="text-3xl font-bold mb-8">Administration</h1>
+			<div role="tablist" class="tabs tabs-lifted">
+				<a href="/admin?tab=general" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "general" || currentTab == "") }>General Settings</a>
+				<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "general" && currentTab != "") }>
+					<div class="space-y-6">
+						<div>
+							<h2 class="text-xl font-semibold mb-4">General Settings</h2>
+							<p class="text-base-content/70 mb-6">Configure general application settings</p>
+						</div>
+						<div class="card bg-base-200 shadow">
+							<div class="card-body">
+								<h3 class="card-title text-lg">Registration Settings</h3>
+								<form action="/admin/settings" method="POST" class="space-y-4">
+									<div class="form-control">
+										<label class="label cursor-pointer justify-start gap-4">
+											<input
+												type="checkbox"
+												name="registrationEnabled"
+												value="true"
+												class="toggle toggle-primary"
+												if settings.RegistrationEnabled {
+													checked
+												}
+											/>
+											<div>
+												<span class="label-text font-medium">Enable Registration</span>
+												<div class="text-sm text-base-content/70">
+													Control whether new users can register for accounts
+												</div>
+											</div>
+										</label>
+									</div>
+									<div class="card-actions justify-end">
+										<button type="submit" class="btn btn-primary">
+											Save Settings
+										</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<a href="/admin?tab=users" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "users") }>User Management</a>
+				<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "users") }>
+					<div class="space-y-6">
+						<div>
+							<h2 class="text-xl font-semibold mb-4">User Management</h2>
+							<p class="text-base-content/70 mb-6">Manage user accounts and permissions</p>
+						</div>
+						<div class="card bg-base-200 shadow">
+							<div class="card-body">
+								<h3 class="card-title text-lg">Existing Users</h3>
+								<div class="overflow-x-auto">
+									<table class="table table-zebra">
+										<thead>
+											<tr>
+												<th>Username</th>
+												<th>Role</th>
+												<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											for _, user := range users {
+												<tr>
+													<td class="font-medium">{ user.Username }</td>
+													<td>
+														<div class="badge badge-outline">
+															{ string(user.Role) }
+														</div>
+													</td>
+													<td>
+														<div class="flex gap-2">
+															<button class="btn btn-sm btn-outline btn-primary">
+																Edit
+															</button>
+															<button class="btn btn-sm btn-outline btn-error">
+																Delete
+															</button>
+														</div>
+													</td>
+												</tr>
+											}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="card bg-base-200 shadow">
+							<div class="card-body">
+								<h3 class="card-title text-lg">Create New User</h3>
+								<form action="/admin/users" method="POST" class="space-y-4">
+									<div class="form-control">
+										<label class="label" for="username">
+											<span class="label-text">Username</span>
+										</label>
+										<input
+											type="text"
+											id="username"
+											name="username"
+											required
+											placeholder="Enter username"
+											class="input input-bordered w-full"
+										/>
+									</div>
+									<div class="form-control">
+										<label class="label" for="password">
+											<span class="label-text">Password</span>
+										</label>
+										<input
+											type="password"
+											id="password"
+											name="password"
+											required
+											placeholder="Enter password"
+											class="input input-bordered w-full"
+										/>
+									</div>
+									<div class="card-actions justify-end">
+										<button type="submit" class="btn btn-primary">
+											Create User
+										</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	}
 }

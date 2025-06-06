@@ -312,7 +312,43 @@ func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 	notifications := server.buildNotifications(r, w)
-	templates.Administration(notifications).Render(r.Context(), w)
+	currentTab := r.URL.Query().Get("tab")
+	if currentTab == "" {
+		currentTab = "general"
+	}
+	
+	settings, err := server.administration.Get()
+	if err != nil {
+		slog.Error("failed to get settings", slog.String("error", err.Error()))
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+	users, err := server.administration.GetAllUsers()
+	if err != nil {
+		slog.Error("failed to get users", slog.String("error", err.Error()))
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	templates.Administration(notifications, settings, users, currentTab).Render(r.Context(), w)
+}
+
+func (server *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
+	session := server.getSession(r)
+	registrationEnabled := r.FormValue("registrationEnabled") == "true"
+
+	err := server.administration.UpdateRegistrationEnabled(registrationEnabled)
+	if err != nil {
+		slog.Error("failed to update settings", slog.String("error", err.Error()))
+		session.AddFlash("Failed to update settings", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, "/admin?tab=general", http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Settings updated successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, "/admin?tab=general", http.StatusFound)
 }
 
 func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +357,7 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if username == "" {
 		session.AddFlash("username is required", "error")
 		session.Save(r, w)
-		http.Redirect(w, r, "/admin", http.StatusFound)
+		http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
 		return
 	}
 
@@ -329,7 +365,7 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if password == "" {
 		session.AddFlash("password is required", "error")
 		session.Save(r, w)
-		http.Redirect(w, r, "/admin", http.StatusFound)
+		http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
 		return
 	}
 
@@ -337,10 +373,13 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		session.AddFlash(err.Error(), "error")
 		session.Save(r, w)
-		http.Redirect(w, r, "/admin", http.StatusFound)
+		http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	
+	session.AddFlash("User created successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
 }
 
 func (server *Server) buildNotifications(r *http.Request, w http.ResponseWriter) []templates.Notification {
@@ -508,6 +547,7 @@ func NewServer(
 			router.Group(func(router chi.Router) {
 				router.Use(server.requireAdmin)
 				router.Get("/admin", server.admin)
+				router.Post("/admin/settings", server.handleUpdateSettings)
 				router.Post("/admin/users", server.handleCreateUser)
 			})
 		})
