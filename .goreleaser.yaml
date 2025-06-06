@@ -56,8 +56,17 @@ dockers:
       - "platform/web/assets"
 
 changelog:
-  sort: asc
+  sort: asc # or desc
+  use: github # uses GitHub API for better formatting
   filters:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^chore:"
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+    - title: Bug fixes
+      regexp: "^.*fix[(\\w)]*:+.*$"
+    - title: Others
+      order: 999
