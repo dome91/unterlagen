@@ -54,7 +54,7 @@ func setupAndLogin(t *testing.T) playwright.Page {
 
 	signin := func() {
 		submitMask("Sign in")
-		textExists("Home")
+		textExists("Welcome to Unterlagen")
 	}
 
 	setup()
