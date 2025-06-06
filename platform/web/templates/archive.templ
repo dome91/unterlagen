@@ -1,0 +1,156 @@
+package templates
+
+import "unterlagen/features/archive"
+
+templ Archive(currentFolderID string, documents []archive.Document, folders []archive.Folder, hierarchy []archive.Folder, notifications []Notification) {
+	@authenticatedLayout(notifications) {
+		@CreateFolderModal(currentFolderID)
+		<div class="container mx-auto my-8">
+			<div class="flex justify-between items-center">
+				@Breadcrumbs(transformBreadcrumbs(hierarchy))
+				<div class="flex gap-4">
+					@DocumentUploadButton(currentFolderID)
+					@CreateFolderButton()
+				</div>
+			</div>
+			if len(folders) > 0 {
+				<h2 class="text-lg font-medium mb-4">Folders</h2>
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+					for _, folder := range folders {
+						@FolderCard(folder.Name, folder.ID)
+					}
+				</div>
+			}
+			if len(documents) > 0 {
+				<h2 class="text-lg font-medium mb-4">Documents</h2>
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+					for _, doc := range documents {
+						@DocumentCard(doc)
+					}
+				</div>
+			}
+		</div>
+	}
+}
+
+templ CreateFolderButton() {
+	<button
+		onclick="document.getElementById('createFolderModal').classList.remove('hidden')"
+		class="btn btn-primary"
+	>
+		@FolderPlusIcon("size-5")
+		<span class="hidden md:inline">New Folder</span>
+	</button>
+}
+
+templ CreateFolderModal(parentFolderID string) {
+	<div id="createFolderModal" class="hidden modal modal-open">
+		<div class="modal-box">
+			<form action="/archive/folders" method="POST">
+				<div class="flex justify-between items-center mb-4">
+					<h3 class="font-bold text-lg">Create Folder</h3>
+					<button type="button" onclick="document.getElementById('createFolderModal').classList.add('hidden')" class="btn btn-sm btn-circle btn-ghost">
+						@XMarkIcon("size-5")
+					</button>
+				</div>
+				<input type="hidden" name="parentFolderID" value={ parentFolderID }/>
+				<div class="form-control w-full">
+					<label for="folderName" class="label">
+						<span class="label-text">Folder Name</span>
+					</label>
+					<input
+						type="text"
+						id="folderName"
+						name="name"
+						required
+						class="input input-bordered w-full"
+					/>
+				</div>
+				<div class="modal-action">
+					<button
+						type="button"
+						onclick="document.getElementById('createFolderModal').classList.add('hidden')"
+						class="btn btn-ghost"
+					>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="btn btn-primary"
+					>
+						Create Folder
+					</button>
+				</div>
+			</form>
+		</div>
+		<div class="modal-backdrop" onclick="document.getElementById('createFolderModal').classList.add('hidden')"></div>
+	</div>
+}
+
+templ DocumentUploadButton(folderID string) {
+	<form action="/archive/documents" method="post" enctype="multipart/form-data">
+		<input type="hidden" name="folderID" value={ folderID }/>
+		<label class="btn btn-primary">
+			@ArrowUpTrayIcon("size-5")
+			<span>Upload Documents</span>
+			<input type="file" name="documents" multiple accept="application/pdf" class="hidden" onchange="this.form.submit()"/>
+		</label>
+	</form>
+}
+
+templ DocumentCard(document archive.Document) {
+	<a href={ templ.SafeURL("/archive/documents/" + document.ID) } class="card card-compact bg-base-200 hover:bg-base-300 transition-colors">
+		<div class="card-body items-center text-center">
+			@DocumentIcon("w-12 h-12 mb-2 text-base-content/70")
+			<p class="text-sm break-words w-full">{ document.Name() }</p>
+		</div>
+	</a>
+}
+
+templ FolderCard(name string, id string) {
+	<a href={ templ.SafeURL("/archive?folderID=" + id) } class="card card-compact bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+		<div class="card-body items-center text-center">
+			@FolderIcon("size-12 mb-2 text-base-content/70")
+			<p class="text-sm break-words w-full">{ name }</p>
+		</div>
+	</a>
+}
+
+func transformBreadcrumbs(folders []archive.Folder) []Breadcrumb {
+	items := make([]Breadcrumb, len(folders))
+	for i, folder := range folders {
+		items[i] = Breadcrumb{
+			Name: folder.Name,
+			URL:  templ.URL("/archive?folderID=" + folder.ID),
+		}
+	}
+	return items[1:]
+}
+
+type Breadcrumb struct {
+	Name string
+	URL  templ.SafeURL
+}
+
+templ Breadcrumbs(breadcrumbs []Breadcrumb) {
+	<div class="breadcrumbs">
+		<ul class="flex items-center">
+			<li>
+				<a href="/archive">
+					@HomeIcon("size-5")
+				</a>
+			</li>
+			for i, breadcrumb := range breadcrumbs {
+				if i == len(breadcrumbs)-1 {
+					<li>
+						<span>{ breadcrumb.Name }</span>
+					</li>
+				} else {
+					<li>
+						<a href={ breadcrumb.URL }>{ breadcrumb.Name }</a>
+					</li>
+				}
+			}
+		</ul>
+	</div>
+}

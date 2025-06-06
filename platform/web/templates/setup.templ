@@ -1,0 +1,50 @@
+package templates
+
+templ Setup(notifications []Notification) {
+	@unauthenticatedLayout(notifications) {
+		<div class="min-h-screen flex items-center justify-center p-4">
+			<div class="card w-full max-w-md">
+				<div class="card-body">
+					<div class="text-center mb-2">
+						<h1 class="text-2xl font-bold mb-2">Welcome to Unterlagen</h1>
+						<p class="text-base-content/70">Let's set up your account</p>
+					</div>
+					<form action="/setup" method="POST" class="space-y-4">
+						<div class="form-control">
+							<label for="username" class="label">
+								<span class="label-text">Username</span>
+							</label>
+							<input
+								type="text"
+								id="username"
+								name="username"
+								required
+								placeholder="Username"
+								class="input input-bordered w-full"
+							/>
+						</div>
+						<div class="form-control">
+							<label for="password" class="label">
+								<span class="label-text">Password</span>
+							</label>
+							<input
+								type="password"
+								id="password"
+								name="password"
+								required
+								placeholder="Password"
+								class="input input-bordered w-full"
+							/>
+						</div>
+						<button
+							type="submit"
+							class="btn btn-primary w-full"
+						>
+							Create
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+}
