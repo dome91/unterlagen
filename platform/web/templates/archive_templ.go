@@ -109,7 +109,7 @@ func Archive(currentFolderID string, documents []archive.Document, folders []arc
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = authenticatedLayout(notifications).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = authenticatedLayout(notifications, PageArchive).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

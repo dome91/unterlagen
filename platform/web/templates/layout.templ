@@ -1,5 +1,13 @@
 package templates
 
+type Page string
+
+const (
+	PageHome    Page = "home"
+	PageArchive Page = "archive"
+	PageError   Page = "error"
+)
+
 templ baseLayout(notifications []Notification) {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -17,9 +25,9 @@ templ baseLayout(notifications []Notification) {
 	</html>
 }
 
-templ authenticatedLayout(notifications []Notification) {
+templ authenticatedLayout(notifications []Notification, page Page) {
 	@baseLayout(notifications) {
-		@Navbar()
+		@Navbar(page)
 		<div class="m-4">
 			{ children... }
 		</div>
@@ -35,21 +43,15 @@ templ unauthenticatedLayout(notifications []Notification) {
 	}
 }
 
-templ Navbar() {
+templ Navbar(page Page) {
 	<div class="navbar shadow-sm max-sm:hidden">
-		<a class="btn btn-ghost text-xl">Unterlagen</a>
+		<a class="btn btn-ghost text-xl" href="/">Unterlagen</a>
 		<div class="navbar-center">
 			<ul class="menu menu-horizontal menu-lg">
 				<li>
-					<a class="menu-active">
+					<a class={ templ.KV("menu-active", page == PageArchive) } href="/archive">
 						@ArchiveIcon("size-6")
 						Archive
-					</a>
-				</li>
-				<li>
-					<a>
-						@AssistantIcon("size-6")
-						Assistant
 					</a>
 				</li>
 			</ul>

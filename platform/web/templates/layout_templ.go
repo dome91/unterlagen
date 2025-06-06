@@ -8,6 +8,14 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+type Page string
+
+const (
+	PageHome    Page = "home"
+	PageArchive Page = "archive"
+	PageError   Page = "error"
+)
+
 func baseLayout(notifications []Notification) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -49,7 +57,7 @@ func baseLayout(notifications []Notification) templ.Component {
 	})
 }
 
-func authenticatedLayout(notifications []Notification) templ.Component {
+func authenticatedLayout(notifications []Notification, page Page) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -82,7 +90,7 @@ func authenticatedLayout(notifications []Notification) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = Navbar().Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = Navbar(page).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -167,7 +175,7 @@ func unauthenticatedLayout(notifications []Notification) templ.Component {
 	})
 }
 
-func Navbar() templ.Component {
+func Navbar(page Page) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -188,7 +196,29 @@ func Navbar() templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"navbar shadow-sm max-sm:hidden\"><a class=\"btn btn-ghost text-xl\">Unterlagen</a><div class=\"navbar-center\"><ul class=\"menu menu-horizontal menu-lg\"><li><a class=\"menu-active\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"navbar shadow-sm max-sm:hidden\"><a class=\"btn btn-ghost text-xl\" href=\"/\">Unterlagen</a><div class=\"navbar-center\"><ul class=\"menu menu-horizontal menu-lg\"><li>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 = []any{templ.KV("menu-active", page == PageArchive)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<a class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var7).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layout.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" href=\"/archive\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -196,15 +226,7 @@ func Navbar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "Archive</a></li><li><a>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = AssistantIcon("size-6").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "Assistant</a></li></ul></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "Archive</a></li></ul></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -228,12 +250,12 @@ func Dock() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"dock md:hidden\"><button><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><polyline points=\"1 11 12 2 23 11\" fill=\"none\" stroke=\"currentColor\" stroke-miterlimit=\"10\" stroke-width=\"2\"></polyline><path d=\"m5,13v7c0,1.105.895,2,2,2h10c1.105,0,2-.895,2-2v-7\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></path><line x1=\"12\" y1=\"22\" x2=\"12\" y2=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></line></g></svg> <span class=\"dock-label\">Home</span></button> <button class=\"dock-active\"><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><polyline points=\"3 14 9 14 9 17 15 17 15 14 21 14\" fill=\"none\" stroke=\"currentColor\" stroke-miterlimit=\"10\" stroke-width=\"2\"></polyline><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></rect></g></svg> <span class=\"dock-label\">Inbox</span></button> <button><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></circle><path d=\"m22,13.25v-2.5l-2.318-.966c-.167-.581-.395-1.135-.682-1.654l.954-2.318-1.768-1.768-2.318.954c-.518-.287-1.073-.515-1.654-.682l-.966-2.318h-2.5l-.966,2.318c-.581.167-1.135.395-1.654.682l-2.318-.954-1.768,1.768.954,2.318c-.287.518-.515,1.073-.682,1.654l-2.318.966v2.5l2.318.966c.167.581.395,1.135.682,1.654l-.954,2.318,1.768,1.768,2.318-.954c.518.287,1.073.515,1.654.682l.966,2.318h2.5l.966-2.318c.581-.167,1.135-.395,1.654-.682l2.318.954,1.768-1.768-.954-2.318c.287-.518.515-1.073.682-1.654l2.318-.966Z\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></path></g></svg> <span class=\"dock-label\">Settings</span></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"dock md:hidden\"><button><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><polyline points=\"1 11 12 2 23 11\" fill=\"none\" stroke=\"currentColor\" stroke-miterlimit=\"10\" stroke-width=\"2\"></polyline><path d=\"m5,13v7c0,1.105.895,2,2,2h10c1.105,0,2-.895,2-2v-7\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></path><line x1=\"12\" y1=\"22\" x2=\"12\" y2=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></line></g></svg> <span class=\"dock-label\">Home</span></button> <button class=\"dock-active\"><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><polyline points=\"3 14 9 14 9 17 15 17 15 14 21 14\" fill=\"none\" stroke=\"currentColor\" stroke-miterlimit=\"10\" stroke-width=\"2\"></polyline><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></rect></g></svg> <span class=\"dock-label\">Inbox</span></button> <button><svg class=\"size-[1.2em]\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"currentColor\" stroke-linejoin=\"miter\" stroke-linecap=\"butt\"><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></circle><path d=\"m22,13.25v-2.5l-2.318-.966c-.167-.581-.395-1.135-.682-1.654l.954-2.318-1.768-1.768-2.318.954c-.518-.287-1.073-.515-1.654-.682l-.966-2.318h-2.5l-.966,2.318c-.581.167-1.135.395-1.654.682l-2.318-.954-1.768,1.768.954,2.318c-.287.518-.515,1.073-.682,1.654l-2.318.966v2.5l2.318.966c.167.581.395,1.135.682,1.654l-.954,2.318,1.768,1.768,2.318-.954c.518.287,1.073.515,1.654.682l.966,2.318h2.5l.966-2.318c.581-.167,1.135-.395,1.654-.682l2.318.954,1.768-1.768-.954-2.318c.287-.518.515-1.073.682-1.654l2.318-.966Z\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"square\" stroke-miterlimit=\"10\" stroke-width=\"2\"></path></g></svg> <span class=\"dock-label\">Settings</span></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
