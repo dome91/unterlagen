@@ -5,6 +5,7 @@ type Page string
 const (
 	PageHome    Page = "home"
 	PageArchive Page = "archive"
+	PageAdmin   Page = "admin"
 	PageError   Page = "error"
 )
 
@@ -52,6 +53,12 @@ templ Navbar(page Page) {
 					<a class={ templ.KV("menu-active", page == PageArchive) } href="/archive">
 						@ArchiveIcon("size-6")
 						Archive
+					</a>
+				</li>
+				<li>
+					<a class={ templ.KV("menu-active", page == PageAdmin) } href="/admin">
+						@AdminIcon("size-6")
+						Administration
 					</a>
 				</li>
 			</ul>

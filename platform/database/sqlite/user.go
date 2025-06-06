@@ -24,6 +24,16 @@ func (u *UserRepository) ExistsByRole(role administration.UserRole) bool {
 	return count > 0
 }
 
+// FindAll implements administration.UserRepository.
+func (u *UserRepository) FindAll() ([]administration.User, error) {
+	var users []administration.User
+	err := u.db.Select(&users, "SELECT * FROM users order by username")
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // FindAllByRole implements administration.UserRepository.
 func (u *UserRepository) FindAllByRole(role administration.UserRole) ([]administration.User, error) {
 	var users []administration.User

@@ -34,6 +34,7 @@ func (user User) IsValidPassword(password string) bool {
 type UserRepository interface {
 	Save(user User) error
 	FindByUsername(username string) (User, error)
+	FindAll() ([]User, error)
 	FindAllByRole(role UserRole) ([]User, error)
 	ExistsByRole(role UserRole) bool
 }
@@ -70,6 +71,10 @@ func (users *users) AdminExists() bool {
 
 func (users *users) GetUser(username string) (User, error) {
 	return users.repository.FindByUsername(username)
+}
+
+func (users *users) GetAllUsers() ([]User, error) {
+	return users.repository.FindAll()
 }
 
 func (users *users) GetAllUsersByRole(role UserRole) ([]User, error) {
