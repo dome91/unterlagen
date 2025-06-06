@@ -3,7 +3,7 @@ package templates
 import "unterlagen/features/archive"
 
 templ Archive(currentFolderID string, documents []archive.Document, folders []archive.Folder, hierarchy []archive.Folder, notifications []Notification) {
-	@authenticatedLayout(notifications) {
+	@authenticatedLayout(notifications, PageArchive) {
 		@CreateFolderModal(currentFolderID)
 		<div class="container mx-auto my-8">
 			<div class="flex justify-between items-center">
