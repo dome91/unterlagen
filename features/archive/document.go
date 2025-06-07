@@ -63,11 +63,11 @@ func (document Document) Filepath() string {
 }
 
 func (document Document) PreviewPrefix() string {
-	return path.Join(document.Owner, document.ID)
+	return path.Join(document.Owner, document.ID, "previews")
 }
 
 func (document Document) ShouldBeDeleted() bool {
-	return time.Now().Sub(document.TrashedAt) >= ThirtyDays
+	return time.Since(document.TrashedAt) >= ThirtyDays
 }
 
 type DocumentRepository interface {

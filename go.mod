@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gorilla/sessions v1.4.0
+	github.com/klippa-app/go-pdfium v1.14.1
 	github.com/ncruces/go-sqlite3 v0.25.0
 	github.com/ollama/ollama v0.6.8
 	github.com/openai/openai-go v0.1.0-beta.10
@@ -24,6 +25,8 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
