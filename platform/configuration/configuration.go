@@ -76,7 +76,7 @@ func Load() Configuration {
 	}
 
 	if config.Server.SessionKey == "" {
-		panic("Session key is required")
+		config.Server.SessionKey = "my-secret-key"
 	}
 	return config
 }

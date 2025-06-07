@@ -37,9 +37,25 @@ CREATE TABLE documents (
     FOREIGN KEY (owner) REFERENCES users (username) ON DELETE CASCADE
 );
 
+CREATE TABLE documents_previews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id TEXT NOT NULL,
+    filepath TEXT NOT NULL,
+    page_number INTEGER NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE,
+    UNIQUE(document_id, page_number)
+);
+
+CREATE INDEX idx_documents_previews_document_id ON documents_previews(document_id);
+
 -- +goose Down
-DROP TABLE users;
+DROP INDEX idx_documents_previews_document_id;
+
+DROP TABLE documents_previews;
+
+DROP TABLE documents;
 
 DROP TABLE folders;
 
-DROP TABLE documents;
+DROP TABLE users;

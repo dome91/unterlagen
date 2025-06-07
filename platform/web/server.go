@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
 	"unterlagen/features/common"
@@ -344,6 +345,40 @@ func (server *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, "/archive", http.StatusFound)
 }
 
+func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	pageNumberStr := chi.URLParam(r, "page")
+	
+	if documentID == "" || pageNumberStr == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil {
+		http.Error(w, "Invalid page number", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	
+	err = server.archive.GetDocumentPreview(documentID, user, pageNumber, func(r io.Reader) error {
+		_, err := io.Copy(w, r)
+		return err
+	})
+
+	if err != nil {
+		slog.Error("failed to get document preview",
+			slog.String("documentID", documentID),
+			slog.String("user", user),
+			slog.Int("page", pageNumber),
+			slog.String("error", err.Error()))
+		http.Error(w, "Preview not found", http.StatusNotFound)
+	}
+}
+
 func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	session := server.getSession(r)
 	session.Options.MaxAge = -1
@@ -600,6 +635,7 @@ func NewServer(
 			router.Post("/archive/documents", server.handleUploadDocument)
 			router.Get("/archive/documents/{id}", server.getDocumentDetails)
 			router.Get("/archive/documents/{id}/download", server.downloadDocument)
+			router.Get("/archive/documents/{id}/previews/{page}", server.getDocumentPreview)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
 
 			router.Group(func(router chi.Router) {
