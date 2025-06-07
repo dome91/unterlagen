@@ -46,7 +46,9 @@ templ unauthenticatedLayout(notifications []Notification) {
 
 templ Navbar(page Page) {
 	<div class="navbar shadow-sm max-sm:hidden">
-		<a class="btn btn-ghost text-xl" href="/">Unterlagen</a>
+		<div class="navbar-start">
+			<a class="btn btn-ghost text-xl" href="/">Unterlagen</a>
+		</div>
 		<div class="navbar-center">
 			<ul class="menu menu-horizontal menu-lg">
 				<li>
@@ -62,6 +64,29 @@ templ Navbar(page Page) {
 					</a>
 				</li>
 			</ul>
+		</div>
+		<div class="navbar-end">
+			<div class="dropdown dropdown-end">
+				<div tabindex="0" role="button" class="btn btn-ghost btn-circle">
+					@UserIcon("size-6")
+				</div>
+				<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+					<li>
+						<a href="/profile">
+							@UserIcon("size-4")
+							Profile
+						</a>
+					</li>
+					<li>
+						<form method="POST" action="/logout" class="w-full">
+							<button type="submit" class="flex items-center gap-2 w-full cursor-pointer">
+								@ArrowRightOnRectangleIcon("size-4")
+								Logout
+							</button>
+						</form>
+					</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 }

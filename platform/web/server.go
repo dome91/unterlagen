@@ -310,6 +310,20 @@ func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
+func (server *Server) profile(w http.ResponseWriter, r *http.Request) {
+	username := server.getAuthenticatedUser(r)
+	
+	user, err := server.administration.GetUser(username)
+	if err != nil {
+		slog.Error("failed to get user", slog.String("error", err.Error()))
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("<h1>Profile Page</h1><p>Welcome, " + user.Username + "</p><p>This is a placeholder profile page.</p>"))
+}
+
 func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 	notifications := server.buildNotifications(r, w)
 	currentTab := r.URL.Query().Get("tab")
@@ -538,6 +552,7 @@ func NewServer(
 		router.Group(func(router chi.Router) {
 			router.Use(server.requireLogin)
 			router.Get("/", server.home)
+			router.Get("/profile", server.profile)
 			router.Post("/logout", server.handleLogout)
 			router.Get("/archive", server.getArchive)
 			router.Post("/archive/folders", server.handleCreateFolder)
