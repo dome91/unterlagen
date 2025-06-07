@@ -273,6 +273,24 @@ func (server *Server) handleUploadDocument(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, fmt.Sprintf("/archive?folderID=%s", folderID), http.StatusFound)
 }
 
+func (server *Server) getDocumentDetails(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	if documentID == "" {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	document, err := server.archive.GetDocument(documentID, user)
+	if err != nil {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	notifications := server.buildNotifications(r, w)
+	templates.DocumentDetails(document, notifications).Render(r.Context(), w)
+}
+
 func (server *Server) downloadDocument(w http.ResponseWriter, r *http.Request) {
 	user := server.getAuthenticatedUser(r)
 	documentID := chi.URLParam(r, "id")
@@ -301,6 +319,29 @@ func (server *Server) downloadDocument(w http.ResponseWriter, r *http.Request) {
 			slog.String("user", user),
 			slog.String("error", err.Error()))
 	}
+}
+
+func (server *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	if documentID == "" {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	session := server.getSession(r)
+	err := server.archive.TrashDocument(documentID, user)
+	if err != nil {
+		slog.Error("failed to delete document", slog.String("error", err.Error()))
+		session.AddFlash("Failed to delete document", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Document deleted successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, "/archive", http.StatusFound)
 }
 
 func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -557,7 +598,9 @@ func NewServer(
 			router.Get("/archive", server.getArchive)
 			router.Post("/archive/folders", server.handleCreateFolder)
 			router.Post("/archive/documents", server.handleUploadDocument)
-			router.Get("/archive/documents/{id}", server.downloadDocument)
+			router.Get("/archive/documents/{id}", server.getDocumentDetails)
+			router.Get("/archive/documents/{id}/download", server.downloadDocument)
+			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
 
 			router.Group(func(router chi.Router) {
 				router.Use(server.requireAdmin)

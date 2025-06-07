@@ -54,8 +54,13 @@ func TestFileUploadAndDownload(t *testing.T) {
 	require.True(t, isVisible, "Uploaded document should be visible in the archive")
 	// Test file download by clicking on the document
 	// Set up download handler
+	require.Nil(t, uploadedDocumentTitle.Click())
+
+	downloadLink := page.GetByRole("link", playwright.PageGetByRoleOptions{
+		Name: "Download",
+	})
 	download, err := page.ExpectDownload(func() error {
-		return uploadedDocumentTitle.Click()
+		return downloadLink.Click()
 	})
 	require.Nil(t, err)
 
