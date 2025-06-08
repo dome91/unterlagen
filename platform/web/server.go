@@ -419,8 +419,23 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		templates.ErrorServer("").Render(r.Context(), w)
 		return
 	}
+	
+	// Get page for tasks pagination
+	page := 1
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	
+	tasks, totalTasks, totalPages, err := server.administration.GetTasksPaginated(page)
+	if err != nil {
+		slog.Error("failed to get tasks", slog.String("error", err.Error()))
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
 
-	templates.Administration(notifications, settings, users, currentTab).Render(r.Context(), w)
+	templates.Administration(notifications, settings, users, tasks, currentTab, page, totalPages, totalTasks).Render(r.Context(), w)
 }
 
 func (server *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {

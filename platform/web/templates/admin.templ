@@ -1,8 +1,12 @@
 package templates
 
-import "unterlagen/features/administration"
+import (
+	"strconv"
+	"unterlagen/features/administration"
+	"unterlagen/features/common"
+)
 
-templ Administration(notifications []Notification, settings administration.Settings, users []administration.User, currentTab string) {
+templ Administration(notifications []Notification, settings administration.Settings, users []administration.User, tasks []common.Task, currentTab string, currentPage, totalPages, totalTasks int) {
 	@authenticatedLayout(notifications, PageAdmin) {
 		<div class="max-w-4xl mx-auto">
 			<h1 class="text-3xl font-bold mb-8">Administration</h1>
@@ -132,6 +136,78 @@ templ Administration(notifications []Notification, settings administration.Setti
 						</div>
 					</div>
 				</div>
+				<a href="/admin?tab=tasks" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "tasks") }>Task Management</a>
+					<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "tasks") }>
+						<div class="space-y-6">
+							<div>
+								<h2 class="text-xl font-semibold mb-4">Task Management</h2>
+								<p class="text-base-content/70 mb-6">Monitor background processing tasks</p>
+							</div>
+							<div class="card bg-base-200 shadow">
+								<div class="card-body">
+									<h3 class="card-title text-lg">Task Queue</h3>
+									<div class="overflow-x-auto">
+										<table class="table table-zebra">
+											<thead>
+												<tr>
+													<th>ID</th>
+													<th>Type</th>
+													<th>Status</th>
+													<th>Attempts</th>
+													<th>Created</th>
+													<th>Error</th>
+												</tr>
+											</thead>
+											<tbody>
+												for _, task := range tasks {
+													<tr>
+														<td class="font-mono text-sm">{ task.ID[:8] }...</td>
+														<td>
+															<div class="badge badge-outline">
+																{ string(task.Type) }
+															</div>
+														</td>
+														<td>
+															<div class={ "badge", templ.KV("badge-success", task.Status == common.TaskStatusCompleted), templ.KV("badge-error", task.Status == common.TaskStatusFailed), templ.KV("badge-warning", task.Status == common.TaskStatusRunning), templ.KV("badge-info", task.Status == common.TaskStatusPending) }>
+																{ string(task.Status) }
+															</div>
+														</td>
+														<td>{ strconv.Itoa(task.Attempts) }/{ strconv.Itoa(task.MaxAttempts) }</td>
+														<td class="text-sm">{ task.CreatedAt.Format("2006-01-02 15:04") }</td>
+														<td class="text-sm text-error">
+															if task.Error != "" {
+																{ task.Error }
+															}
+														</td>
+													</tr>
+												}
+											</tbody>
+										</table>
+									</div>
+									<div class="mt-4 flex justify-between items-center">
+										<div class="text-sm text-base-content/70">
+											Showing { strconv.Itoa(((currentPage-1)*10)+1) }-{ strconv.Itoa(((currentPage-1)*10)+len(tasks)) } of { strconv.Itoa(totalTasks) } tasks
+										</div>
+										<div class="btn-group">
+											if currentPage > 1 {
+												<a href={ templ.URL("/admin?tab=tasks&page=" +  strconv.Itoa(currentPage-1 + '0')) } class="btn btn-sm">«</a>
+											}
+											for i := 1; i <= totalPages; i++ {
+												if i == currentPage {
+													<a href={ templ.URL("/admin?tab=tasks&page=" +  strconv.Itoa(i)) } class="btn btn-sm btn-active">{  strconv.Itoa(i) }</a>
+												} else {
+													<a href={ templ.URL("/admin?tab=tasks&page=" +  strconv.Itoa(i)) } class="btn btn-sm">{  strconv.Itoa(i) }</a>
+												}
+											}
+											if currentPage < totalPages {
+												<a href={ templ.URL("/admin?tab=tasks&page=" +  strconv.Itoa(currentPage+1)) } class="btn btn-sm">»</a>
+											}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 			</div>
 		</div>
 	}

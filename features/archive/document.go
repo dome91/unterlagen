@@ -112,6 +112,7 @@ type documents struct {
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
 	analyzers      map[Filetype]DocumentAnalyzer
+	scheduler      *common.Scheduler
 }
 
 func (d *documents) UploadDocument(filename string, filesize uint64, folderID string, owner string, r io.Reader) error {
@@ -135,7 +136,12 @@ func (d *documents) UploadDocument(filename string, filesize uint64, folderID st
 		return err
 	}
 
-	return d.messages.PublishDocumentUploaded(document)
+	err = d.messages.PublishDocumentUploaded(document)
+	if err != nil {
+		return err
+	}
+
+	return d.scheduleDocumentProcessing(document)
 }
 
 func (d *documents) determineFiletype(r io.Reader) (Filetype, error) {
@@ -255,30 +261,25 @@ func (d *documents) emptyTrash(ctx context.Context) {
 	}
 }
 
-func (d *documents) analyze(document Document) error {
-	analyzer, ok := d.analyzers[document.Filetype]
-	if !ok {
-		return ErrUnsupportedFiletype
-	}
+func (d *documents) scheduleDocumentProcessing(document Document) error {
+	payload := DocumentProcessingPayload{DocumentID: document.ID}
 
-	text, err := analyzer.ExtractText(document)
+	err := d.scheduler.ScheduleTask(common.TaskTypeExtractText, payload, 3)
 	if err != nil {
 		return err
 	}
 
-	previewFilepaths, err := analyzer.GeneratePreviews(document)
+	err = d.scheduler.ScheduleTask(common.TaskTypeGeneratePreviews, payload, 3)
 	if err != nil {
 		return err
 	}
 
-	document.Text = text
-	document.PreviewFilepaths = previewFilepaths
-	err = d.repository.Save(document)
-	if err != nil {
-		return err
-	}
+	slog.Info("scheduled async processing for document", "document_id", document.ID)
+	return nil
+}
 
-	return d.messages.PublishDocumentAnalyzed(document)
+type DocumentProcessingPayload struct {
+	DocumentID string `json:"document_id"`
 }
 
 func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, scheduler *common.Scheduler) *documents {
@@ -286,15 +287,18 @@ func newDocuments(repository DocumentRepository, storage DocumentStorage, previe
 	analyzers := make(map[Filetype]DocumentAnalyzer)
 	analyzers[PDF] = pdfAnalyzer
 
+	asyncProcessor := NewAsyncDocumentProcessor(repository, storage, previewStorage, messages)
+
 	documents := &documents{
 		repository:     repository,
 		storage:        storage,
 		previewStorage: previewStorage,
 		messages:       messages,
 		analyzers:      analyzers,
+		scheduler:      scheduler,
 	}
 
-	messages.SubscribeDocumentUploaded(documents.analyze)
 	scheduler.Schedule(documents.emptyTrash)
+	scheduler.RegisterWorker(asyncProcessor)
 	return documents
 }
