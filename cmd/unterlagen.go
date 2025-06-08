@@ -28,7 +28,11 @@ func main() {
 	userRepository := sqlite.NewUserRepository(db)
 	documentRepository := sqlite.NewDocumentRepository(db)
 	folderRepository := sqlite.NewFolderRepository(db)
+	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
+	
+	// Set task repository on scheduler to break cyclic dependency
+	scheduler.SetTaskRepository(taskRepository)
 
 	// Event
 	userMessages := synchronous.NewUserMessages()
@@ -39,7 +43,7 @@ func main() {
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
 	// Features
-	administration := administration.New(settingsRepository, userRepository, userMessages)
+	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, scheduler)
 
 	// Web

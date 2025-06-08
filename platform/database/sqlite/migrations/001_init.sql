@@ -49,7 +49,26 @@ CREATE TABLE documents_previews (
 
 CREATE INDEX idx_documents_previews_document_id ON documents_previews(document_id);
 
+CREATE TABLE tasks (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    error TEXT,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 3,
+    next_run_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+CREATE INDEX idx_tasks_status_next_run ON tasks(status, next_run_at);
+
 -- +goose Down
+DROP INDEX idx_tasks_status_next_run;
+
+DROP TABLE tasks;
+
 DROP INDEX idx_documents_previews_document_id;
 
 DROP TABLE documents_previews;
