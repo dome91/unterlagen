@@ -115,7 +115,7 @@ func (p *PDFAnalyzer) GeneratePreviews(document Document) ([]string, error) {
 
 		for page := range pageCount.PageCount {
 			pageRender, err := instance.RenderPageInDPI(&requests.RenderPageInDPI{
-				DPI: 200, // The DPI to render the page in.
+				DPI: 80, // The DPI to render the page in.
 				Page: requests.Page{
 					ByIndex: &requests.PageByIndex{
 						Document: pdfDocument.Document,

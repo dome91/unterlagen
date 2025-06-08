@@ -15,7 +15,7 @@ Unterlagen is a Go web application template that serves as a document archive sy
 - **test/**: End-to-end tests using Playwright
 
 ### Key Components
-- **Database**: SQLite with goose migrations, in-memory fallbacks for testing
+- **Database**: SQLite with goose migrations
 - **Web Framework**: Chi router with templ templates and Tailwind CSS
 - **Event System**: Synchronous events (can be swapped for NATS)
 - **Storage**: Filesystem-based document storage
@@ -64,7 +64,6 @@ Configuration uses Viper with environment variables prefixed with `UNTERLAGEN_`:
 - `UNTERLAGEN_SERVER_SESSION_KEY` (required)
 - `UNTERLAGEN_ASSISTANT_PROVIDER` (none, openai, ollama)
 - `UNTERLAGEN_ASSISTANT_API_KEY`
-- `UNTERLAGEN_ARCHIVE_DIRECTORY` (default: ./archives)
 
 ## Template System
 
