@@ -21,7 +21,7 @@ import (
 //go:embed migrations/*
 var migrations embed.FS
 
-func Initialize(shutdown *common.Shutdown, scheduler *common.Scheduler, configuration configuration.Configuration) *sqlx.DB {
+func Initialize(shutdown *common.Shutdown, jobScheduler *common.JobScheduler, configuration configuration.Configuration) *sqlx.DB {
 	var db *sqlx.DB
 	var err error
 	if configuration.Production {
@@ -74,7 +74,7 @@ func Initialize(shutdown *common.Shutdown, scheduler *common.Scheduler, configur
 		panic(err)
 	}
 
-	scheduler.Schedule(func(ctx context.Context) {
+	jobScheduler.Schedule(func(ctx context.Context) {
 		ticker := time.NewTicker(24 * time.Hour) // Daily optimization
 		defer ticker.Stop()
 

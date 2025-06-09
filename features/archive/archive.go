@@ -17,7 +17,8 @@ func New(
 	documentMessages DocumentMessages,
 	folderRepository FolderRepository,
 	userMessages administration.UserMessages,
-	scheduler *common.Scheduler,
+	jobScheduler *common.JobScheduler,
+	taskScheduler *common.TaskScheduler,
 ) *Archive {
 	return &Archive{
 		documents: newDocuments(
@@ -25,7 +26,8 @@ func New(
 			documentStorage,
 			documentPreviewStorage,
 			documentMessages,
-			scheduler,
+			jobScheduler,
+			taskScheduler,
 		),
 		folders: newFolders(
 			folderRepository,

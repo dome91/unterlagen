@@ -112,7 +112,7 @@ type documents struct {
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
 	analyzers      map[Filetype]DocumentAnalyzer
-	scheduler      *common.Scheduler
+	taskScheduler  *common.TaskScheduler
 }
 
 func (d *documents) UploadDocument(filename string, filesize uint64, folderID string, owner string, r io.Reader) error {
@@ -264,12 +264,12 @@ func (d *documents) emptyTrash(ctx context.Context) {
 func (d *documents) scheduleDocumentProcessing(document Document) error {
 	payload := DocumentProcessingPayload{DocumentID: document.ID}
 
-	err := d.scheduler.ScheduleTask(common.TaskTypeExtractText, payload, 3)
+	err := d.taskScheduler.ScheduleTask(common.TaskTypeExtractText, payload, 3)
 	if err != nil {
 		return err
 	}
 
-	err = d.scheduler.ScheduleTask(common.TaskTypeGeneratePreviews, payload, 3)
+	err = d.taskScheduler.ScheduleTask(common.TaskTypeGeneratePreviews, payload, 3)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ type DocumentProcessingPayload struct {
 	DocumentID string `json:"document_id"`
 }
 
-func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, scheduler *common.Scheduler) *documents {
+func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, jobScheduler *common.JobScheduler, taskScheduler *common.TaskScheduler) *documents {
 	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage)
 	analyzers := make(map[Filetype]DocumentAnalyzer)
 	analyzers[PDF] = pdfAnalyzer
@@ -295,10 +295,10 @@ func newDocuments(repository DocumentRepository, storage DocumentStorage, previe
 		previewStorage: previewStorage,
 		messages:       messages,
 		analyzers:      analyzers,
-		scheduler:      scheduler,
+		taskScheduler:  taskScheduler,
 	}
 
-	scheduler.Schedule(documents.emptyTrash)
-	scheduler.RegisterWorker(asyncProcessor)
+	jobScheduler.Schedule(documents.emptyTrash)
+	taskScheduler.RegisterWorker(asyncProcessor)
 	return documents
 }
