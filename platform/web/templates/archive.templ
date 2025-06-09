@@ -4,7 +4,6 @@ import "unterlagen/features/archive"
 
 templ Archive(currentFolderID string, documents []archive.Document, folders []archive.Folder, hierarchy []archive.Folder, notifications []Notification) {
 	@authenticatedLayout(notifications, PageArchive) {
-		@CreateFolderModal(currentFolderID)
 		<div class="container mx-auto my-8">
 			<div class="flex justify-between items-center">
 				@Breadcrumbs(transformBreadcrumbs(hierarchy))
@@ -30,12 +29,13 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 				</div>
 			}
 		</div>
+		@CreateFolderModal(currentFolderID)
 	}
 }
 
 templ CreateFolderButton() {
 	<button
-		onclick="document.getElementById('createFolderModal').classList.remove('hidden')"
+		onclick="document.getElementById('createFolderModal').classList.remove('hidden'); document.getElementById('createFolderModal').classList.add('modal-open')"
 		class="btn btn-primary"
 	>
 		@FolderPlusIcon("size-5")
@@ -44,12 +44,12 @@ templ CreateFolderButton() {
 }
 
 templ CreateFolderModal(parentFolderID string) {
-	<div id="createFolderModal" class="hidden modal modal-open">
+	<div id="createFolderModal" class="hidden modal">
 		<div class="modal-box">
 			<form action="/archive/folders" method="POST">
 				<div class="flex justify-between items-center mb-4">
 					<h3 class="font-bold text-lg">Create Folder</h3>
-					<button type="button" onclick="document.getElementById('createFolderModal').classList.add('hidden')" class="btn btn-sm btn-circle btn-ghost">
+					<button type="button" onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')" class="btn btn-sm btn-circle btn-ghost">
 						@XMarkIcon("size-5")
 					</button>
 				</div>
@@ -69,7 +69,7 @@ templ CreateFolderModal(parentFolderID string) {
 				<div class="modal-action">
 					<button
 						type="button"
-						onclick="document.getElementById('createFolderModal').classList.add('hidden')"
+						onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')"
 						class="btn btn-ghost"
 					>
 						Cancel
@@ -83,7 +83,7 @@ templ CreateFolderModal(parentFolderID string) {
 				</div>
 			</form>
 		</div>
-		<div class="modal-backdrop" onclick="document.getElementById('createFolderModal').classList.add('hidden')"></div>
+		<div class="modal-backdrop" onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')"></div>
 	</div>
 }
 
