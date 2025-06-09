@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"runtime"
 	"strconv"
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
@@ -441,7 +442,9 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		TotalPages:  totalPages,
 		TotalTasks:  totalTasks,
 	}
-	templates.Administration(notifications, currentTab, settings, users, properties).Render(r.Context(), w)
+
+	runtimeInfo := server.administration.GetRuntimeInfo()
+	templates.Administration(notifications, currentTab, settings, users, properties, runtimeInfo).Render(r.Context(), w)
 }
 
 func (server *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
@@ -491,6 +494,12 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	session.AddFlash("User created successfully", "success")
 	session.Save(r, w)
 	http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
+}
+
+func (server *Server) handleForceGC(w http.ResponseWriter, r *http.Request) {
+	runtime.GC()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("GC forced"))
 }
 
 func (server *Server) buildNotifications(r *http.Request, w http.ResponseWriter) []templates.Notification {
@@ -664,6 +673,7 @@ func NewServer(
 				router.Get("/admin", server.admin)
 				router.Post("/admin/settings", server.handleUpdateSettings)
 				router.Post("/admin/users", server.handleCreateUser)
+				router.Post("/admin/runtime/gc", server.handleForceGC)
 			})
 		})
 	})
