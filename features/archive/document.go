@@ -3,6 +3,7 @@ package archive
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log/slog"
@@ -37,20 +38,22 @@ type Document struct {
 	PreviewFilepaths []string
 	Owner            string
 	FolderID         string
-	TrashedAt        time.Time
+	TrashedAt        sql.NullTime
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
 
 func newDocument(filename string, filetype Filetype, filesize uint64, owner string, folderID string) Document {
 	return Document{
-		ID:        common.GenerateID(),
-		Filename:  filename,
-		Filetype:  filetype,
-		Filesize:  filesize,
-		Owner:     owner,
-		FolderID:  folderID,
-		TrashedAt: time.Time{},
+		ID:       common.GenerateID(),
+		Filename: filename,
+		Filetype: filetype,
+		Filesize: filesize,
+		Owner:    owner,
+		FolderID: folderID,
+		TrashedAt: sql.NullTime{
+			Valid: false,
+		},
 	}
 }
 
@@ -67,7 +70,11 @@ func (document Document) PreviewPrefix() string {
 }
 
 func (document Document) ShouldBeDeleted() bool {
-	return time.Since(document.TrashedAt) >= ThirtyDays
+	if !document.TrashedAt.Valid {
+		return false
+	}
+
+	return time.Since(document.TrashedAt.Time) >= ThirtyDays
 }
 
 type DocumentRepository interface {
@@ -210,7 +217,8 @@ func (d *documents) TrashDocument(documentID string, owner string) error {
 		return errors.New("unauthorized")
 	}
 
-	document.TrashedAt = time.Now()
+	document.TrashedAt.Valid = true
+	document.TrashedAt.Time = time.Now()
 	return d.repository.Save(document)
 }
 
