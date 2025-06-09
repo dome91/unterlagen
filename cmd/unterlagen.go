@@ -19,20 +19,17 @@ import (
 func main() {
 	// Common functionality
 	shutdown := common.NewShutdown()
-	scheduler := common.NewScheduler(shutdown)
+	jobScheduler := common.NewJobScheduler(shutdown)
 
 	configuration := configuration.Load()
 
 	// Database
-	db := sqlite.Initialize(shutdown, scheduler, configuration)
+	db := sqlite.Initialize(shutdown, jobScheduler, configuration)
 	userRepository := sqlite.NewUserRepository(db)
 	documentRepository := sqlite.NewDocumentRepository(db)
 	folderRepository := sqlite.NewFolderRepository(db)
 	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
-	
-	// Set task repository on scheduler to break cyclic dependency
-	scheduler.SetTaskRepository(taskRepository)
 
 	// Event
 	userMessages := synchronous.NewUserMessages()
@@ -43,8 +40,9 @@ func main() {
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
 	// Features
+	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
-	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, scheduler)
+	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler)
 
 	// Web
 	server := web.NewServer(administration, archive, shutdown, configuration)

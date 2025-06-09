@@ -40,31 +40,34 @@ func (t *TestEnvironment) StopServer() {
 func NewTestEnvironment() *TestEnvironment {
 	// General configuration
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	// Common functionality
+	shutdown := common.NewShutdown()
+	jobScheduler := common.NewJobScheduler(shutdown)
+
 	configuration := configuration.Load()
 	configuration.Production = false
 
-	// Graceful shutdown
-	shutdown := common.NewShutdown()
-	scheduler := common.NewScheduler(shutdown)
-
-	// Repositories
-	db := sqlite.Initialize(shutdown, scheduler, configuration)
+	// Database
+	db := sqlite.Initialize(shutdown, jobScheduler, configuration)
 	userRepository := sqlite.NewUserRepository(db)
-	settingsRepository := memory.NewSettingsRepository()
 	documentRepository := sqlite.NewDocumentRepository(db)
 	folderRepository := sqlite.NewFolderRepository(db)
+	taskRepository := sqlite.NewTaskRepository(db)
+	settingsRepository := memory.NewSettingsRepository()
 
 	// Event
-	userEvents := synchronous.NewUserMessages()
-	documentEvents := synchronous.NewDocumentMessages()
+	userMessages := synchronous.NewUserMessages()
+	documentMessages := synchronous.NewDocumentMessages()
 
 	// Storage
 	documentStorage := filesystem.NewDocumentStorage(configuration)
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
 	// Features
-	administration := administration.New(settingsRepository, userRepository, userEvents)
-	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentEvents, folderRepository, userEvents, scheduler)
+	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
+	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
+	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler)
 
 	// Web
 	server := web.NewServer(administration, archive, shutdown, configuration)

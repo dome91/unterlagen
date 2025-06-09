@@ -9,28 +9,28 @@ type TaskType string
 type TaskStatus string
 
 const (
-	TaskTypeExtractText     TaskType = "extract_text"
+	TaskTypeExtractText      TaskType = "extract_text"
 	TaskTypeGeneratePreviews TaskType = "generate_previews"
 )
 
 const (
-	TaskStatusPending TaskStatus = "pending"
-	TaskStatusRunning TaskStatus = "running"
+	TaskStatusPending   TaskStatus = "pending"
+	TaskStatusRunning   TaskStatus = "running"
 	TaskStatusCompleted TaskStatus = "completed"
-	TaskStatusFailed TaskStatus = "failed"
+	TaskStatusFailed    TaskStatus = "failed"
 )
 
 type Task struct {
-	ID          string    `json:"id"`
-	Type        TaskType  `json:"type"`
-	Status      TaskStatus `json:"status"`
+	ID          string          `json:"id"`
+	Type        TaskType        `json:"type"`
+	Status      TaskStatus      `json:"status"`
 	Payload     json.RawMessage `json:"payload"`
-	Error       string    `json:"error,omitempty"`
-	Attempts    int       `json:"attempts"`
-	MaxAttempts int       `json:"max_attempts"`
-	NextRunAt   time.Time `json:"next_run_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	Error       string          `json:"error,omitempty"`
+	Attempts    int             `json:"attempts"`
+	MaxAttempts int             `json:"max_attempts"`
+	NextRunAt   time.Time       `json:"next_run_at"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
 func NewTask(taskType TaskType, payload any, maxAttempts int) (Task, error) {
@@ -67,7 +67,7 @@ func (t *Task) MarkFailed(err error) {
 	t.Status = TaskStatusFailed
 	t.Error = err.Error()
 	t.UpdatedAt = time.Now()
-	
+
 	if t.Attempts < t.MaxAttempts {
 		t.Status = TaskStatusPending
 		t.scheduleRetry()
@@ -75,10 +75,8 @@ func (t *Task) MarkFailed(err error) {
 }
 
 func (t *Task) scheduleRetry() {
-	backoffDuration := time.Duration(t.Attempts*t.Attempts) * time.Second
-	if backoffDuration > 5*time.Minute {
-		backoffDuration = 5 * time.Minute
-	}
+	// TODO: Rather exponential backoff?
+	backoffDuration := min(time.Duration(t.Attempts*t.Attempts)*time.Second, 5*time.Minute)
 	t.NextRunAt = time.Now().Add(backoffDuration)
 }
 

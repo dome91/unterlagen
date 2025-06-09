@@ -2,23 +2,36 @@ package common
 
 import "context"
 
-type Scheduler struct {
+type JobScheduler struct {
 	shutdown       *Shutdown
 	taskRepository TaskRepository
 }
 
-func (s *Scheduler) Schedule(task func(ctx context.Context)) {
+func (s *JobScheduler) Schedule(task func(ctx context.Context)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.shutdown.AddCallback(cancel)
 	go task(ctx)
 }
 
-func (s *Scheduler) RegisterWorker(processor TaskProcessor) {
-	worker := NewWorker(s.taskRepository, processor)
-	s.Schedule(worker.Start)
+func NewJobScheduler(shutdown *Shutdown) *JobScheduler {
+	return &JobScheduler{
+		shutdown: shutdown,
+	}
 }
 
-func (s *Scheduler) ScheduleTask(taskType TaskType, payload any, maxAttempts int) error {
+type TaskScheduler struct {
+	shutdown       *Shutdown
+	taskRepository TaskRepository
+}
+
+func (s *TaskScheduler) RegisterWorker(processor TaskProcessor) {
+	worker := NewWorker(s.taskRepository, processor)
+	ctx, cancel := context.WithCancel(context.Background())
+	s.shutdown.AddCallback(cancel)
+	go worker.Start(ctx)
+}
+
+func (s *TaskScheduler) ScheduleTask(taskType TaskType, payload any, maxAttempts int) error {
 	task, err := NewTask(taskType, payload, maxAttempts)
 	if err != nil {
 		return err
@@ -27,12 +40,11 @@ func (s *Scheduler) ScheduleTask(taskType TaskType, payload any, maxAttempts int
 	return s.taskRepository.Save(task)
 }
 
-func (s *Scheduler) SetTaskRepository(taskRepository TaskRepository) {
-	s.taskRepository = taskRepository
-}
-
-func NewScheduler(shutdown *Shutdown) *Scheduler {
-	return &Scheduler{
-		shutdown: shutdown,
+func NewTaskScheduler(
+	shutdown *Shutdown,
+	taskRepository TaskRepository) *TaskScheduler {
+	return &TaskScheduler{
+		shutdown:       shutdown,
+		taskRepository: taskRepository,
 	}
 }
