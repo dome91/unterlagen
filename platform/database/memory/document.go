@@ -47,7 +47,7 @@ func (r *DocumentRepository) FindAllTrashed() ([]archive.Document, error) {
 	defer r.mutex.RUnlock()
 	var documents []archive.Document
 	for _, document := range r.documents {
-		if !document.TrashedAt.IsZero() {
+		if document.TrashedAt.Valid {
 			documents = append(documents, document)
 		}
 	}
