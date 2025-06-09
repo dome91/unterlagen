@@ -4,7 +4,6 @@ import "unterlagen/features/archive"
 import "fmt"
 
 templ DocumentDetails(document archive.Document, notifications []Notification) {
-	
 	<script>
 		let currentPage = 0;
 		let totalPages = 0;
@@ -59,7 +58,6 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 			}
 		});
 	</script>
-
 	@authenticatedLayout(notifications, PageArchive) {
 		<div class="container mx-auto my-8">
 			<div class="flex items-center gap-4 mb-6">
@@ -68,7 +66,6 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 					Back to Archive
 				</a>
 			</div>
-			
 			<div class="card bg-base-100">
 				<div class="card-body">
 					<div class="flex items-start justify-between mb-6">
@@ -90,7 +87,6 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 							</button>
 						</div>
 					</div>
-					
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 						<!-- Left Column: Document Information & Text Preview -->
 						<div class="flex flex-col max-h-[70vh] space-y-6">
@@ -125,7 +121,6 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 									}
 								</div>
 							</div>
-							
 							if document.Text != "" {
 								<div class="flex flex-col min-h-0 flex-grow">
 									<h3 class="text-lg font-semibold mb-3 flex-shrink-0">Extracted Text Preview</h3>
@@ -135,7 +130,6 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 								</div>
 							}
 						</div>
-						
 						<!-- Right Column: Document Preview -->
 						if len(document.PreviewFilepaths) > 0 {
 							<div>
@@ -154,10 +148,9 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 												@ArrowRightIcon("size-4")
 											</button>
 										</div>
-										
 										<!-- Preview Image -->
 										<div class="flex justify-center bg-base-200 rounded-lg p-4">
-											<img 
+											<img
 												id="previewImage"
 												src={ templ.SafeURL(fmt.Sprintf("/archive/documents/%s/previews/0", document.ID)) }
 												alt="Document preview"
@@ -174,11 +167,9 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 				</div>
 			</div>
 		</div>
-		
 		@DeleteDocumentModal(document.ID)
 	}
 }
-
 
 templ DeleteDocumentModal(documentID string) {
 	<dialog id="deleteModal" class="modal">

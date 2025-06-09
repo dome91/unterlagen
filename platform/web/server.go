@@ -349,7 +349,7 @@ func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request)
 	user := server.getAuthenticatedUser(r)
 	documentID := chi.URLParam(r, "id")
 	pageNumberStr := chi.URLParam(r, "page")
-	
+
 	if documentID == "" || pageNumberStr == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
@@ -363,7 +363,7 @@ func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	
+
 	err = server.archive.GetDocumentPreview(documentID, user, pageNumber, func(r io.Reader) error {
 		_, err := io.Copy(w, r)
 		return err
@@ -388,7 +388,7 @@ func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) profile(w http.ResponseWriter, r *http.Request) {
 	username := server.getAuthenticatedUser(r)
-	
+
 	user, err := server.administration.GetUser(username)
 	if err != nil {
 		slog.Error("failed to get user", slog.String("error", err.Error()))
@@ -406,7 +406,7 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 	if currentTab == "" {
 		currentTab = "general"
 	}
-	
+
 	settings, err := server.administration.Get()
 	if err != nil {
 		slog.Error("failed to get settings", slog.String("error", err.Error()))
@@ -419,7 +419,7 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		templates.ErrorServer("").Render(r.Context(), w)
 		return
 	}
-	
+
 	// Get page for tasks pagination
 	page := 1
 	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
@@ -427,7 +427,7 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 			page = p
 		}
 	}
-	
+
 	tasks, totalTasks, totalPages, err := server.administration.GetTasksPaginated(page)
 	if err != nil {
 		slog.Error("failed to get tasks", slog.String("error", err.Error()))
@@ -435,7 +435,13 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates.Administration(notifications, settings, users, tasks, currentTab, page, totalPages, totalTasks).Render(r.Context(), w)
+	properties := templates.TaskTabProperties{
+		Tasks:       tasks,
+		CurrentPage: page,
+		TotalPages:  totalPages,
+		TotalTasks:  totalTasks,
+	}
+	templates.Administration(notifications, currentTab, settings, users, properties).Render(r.Context(), w)
 }
 
 func (server *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
@@ -481,7 +487,7 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
 		return
 	}
-	
+
 	session.AddFlash("User created successfully", "success")
 	session.Save(r, w)
 	http.Redirect(w, r, "/admin?tab=users", http.StatusFound)
