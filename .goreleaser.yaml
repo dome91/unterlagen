@@ -24,6 +24,8 @@ builds:
       #- windows
       #- darwin
     binary: unterlagen
+    ldflags:
+      - '-s -w -X unterlagen/features/administration.Version={{.Version}}'
 
 archives:
   - formats: [tar.gz]

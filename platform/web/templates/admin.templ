@@ -1,12 +1,13 @@
 package templates
 
 import (
+	"fmt"
 	"strconv"
 	"unterlagen/features/administration"
 	"unterlagen/features/common"
 )
 
-templ Administration(notifications []Notification, currentTab string, settings administration.Settings, users []administration.User, taskTabProperties TaskTabProperties) {
+templ Administration(notifications []Notification, currentTab string, settings administration.Settings, users []administration.User, taskTabProperties TaskTabProperties, runtimeInfo administration.RuntimeInfo) {
 	@authenticatedLayout(notifications, PageAdmin) {
 		<div class="max-w-4xl mx-auto">
 			<h1 class="text-3xl font-bold mb-8">Administration</h1>
@@ -14,6 +15,7 @@ templ Administration(notifications []Notification, currentTab string, settings a
 				@GeneralSettingsTab(currentTab, settings)
 				@UserTab(currentTab, users)
 				@TaskTab(currentTab, taskTabProperties)
+				@RuntimeTab(currentTab, runtimeInfo)
 			</div>
 		</div>
 	}
@@ -238,6 +240,84 @@ templ TaskTab(currentTab string, properties TaskTabProperties) {
 								<a href={ templ.URL("/admin?tab=tasks&page=" + strconv.Itoa(currentPage+1)) } class="btn btn-sm">»</a>
 							}
 						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ RuntimeTab(currentTab string, info administration.RuntimeInfo) {
+	<a href="/admin?tab=runtime" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "runtime") }>Runtime Info</a>
+	<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "runtime") }>
+		<div class="space-y-6">
+			<div>
+				<h2 class="text-xl font-semibold mb-4">Runtime Information</h2>
+				<p class="text-base-content/70 mb-6">Application runtime metrics and system information</p>
+			</div>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<div class="card bg-base-200 shadow">
+					<div class="card-body">
+						<h3 class="card-title text-lg">Application Info</h3>
+						<div class="space-y-3">
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Version:</span>
+								<span class="font-medium">{ info.Version }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Go Version:</span>
+								<span class="font-medium">{ info.GoVersion }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Platform:</span>
+								<span class="font-medium">{ info.GOOS }/{ info.GOARCH }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Uptime:</span>
+								<span class="font-medium">{ info.UptimeFormatted }</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card bg-base-200 shadow">
+					<div class="card-body">
+						<h3 class="card-title text-lg">System Resources</h3>
+						<div class="space-y-3">
+							<div class="flex justify-between">
+								<span class="text-base-content/70">CPU Cores:</span>
+								<span class="font-medium">{ strconv.Itoa(info.NumCPU) }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Goroutines:</span>
+								<span class="font-medium">{ strconv.Itoa(info.NumGoroutine) }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Memory Allocated:</span>
+								<span class="font-medium">{ fmt.Sprintf("%.1f MB", info.MemAllocMB) }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">Memory System:</span>
+								<span class="font-medium">{ fmt.Sprintf("%.1f MB", info.MemSysMB) }</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-base-content/70">GC Runs:</span>
+								<span class="font-medium">{ strconv.FormatUint(uint64(info.NumGC), 10) }</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card bg-base-200 shadow">
+				<div class="card-body">
+					<h3 class="card-title text-lg">Actions</h3>
+					<p class="text-base-content/70 mb-4">Trigger runtime operations</p>
+					<div class="flex gap-3">
+						<button class="btn btn-outline btn-primary" onclick="location.reload()">
+							Refresh Data
+						</button>
+						<button class="btn btn-outline btn-secondary" onclick="fetch('/admin/runtime/gc', {method: 'POST'}).then(() => location.reload())">
+							Force GC
+						</button>
 					</div>
 				</div>
 			</div>
