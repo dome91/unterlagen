@@ -114,36 +114,11 @@ func (p *PDFAnalyzer) GeneratePreviews(document Document) ([]string, error) {
 		}
 
 		for page := range pageCount.PageCount {
-			pageRender, err := instance.RenderPageInDPI(&requests.RenderPageInDPI{
-				DPI: 80, // The DPI to render the page in.
-				Page: requests.Page{
-					ByIndex: &requests.PageByIndex{
-						Document: pdfDocument.Document,
-						Index:    page,
-					},
-				},
-			})
-			if err != nil {
-				slog.Warn("failed to render page", "err", err.Error())
-				continue
-			}
-			defer pageRender.Cleanup()
-
 			filepath := path.Join(document.PreviewPrefix(), fmt.Sprintf("page%d.jpeg", page))
-			var buf bytes.Buffer
-			err = jpeg.Encode(&buf, pageRender.Result.Image, &jpeg.Options{
-				Quality: 90,
-			})
+			err := p.generatePreview(instance, pdfDocument, filepath, page)
 			if err != nil {
-				slog.Warn("failed to encode render to jpeg", "err", err.Error())
 				continue
 			}
-
-			err = p.previewStorage.Store(filepath, &buf)
-			if err != nil {
-				slog.Warn("failed to store preview", "err", err.Error())
-			}
-
 			filepaths = append(filepaths, filepath)
 		}
 
@@ -151,6 +126,38 @@ func (p *PDFAnalyzer) GeneratePreviews(document Document) ([]string, error) {
 	})
 
 	return filepaths, err
+}
+
+func (p *PDFAnalyzer) generatePreview(instance pdfium.Pdfium, pdfDocument *responses.OpenDocument, filepath string, page int) error {
+	pageRender, err := instance.RenderPageInDPI(&requests.RenderPageInDPI{
+		DPI: 80, // The DPI to render the page in.
+		Page: requests.Page{
+			ByIndex: &requests.PageByIndex{
+				Document: pdfDocument.Document,
+				Index:    page,
+			},
+		},
+	})
+	if err != nil {
+		slog.Warn("failed to render page", "err", err.Error())
+		return err
+	}
+	defer pageRender.Cleanup()
+
+	var buf bytes.Buffer
+	err = jpeg.Encode(&buf, pageRender.Result.Image, &jpeg.Options{
+		Quality: 90,
+	})
+	if err != nil {
+		slog.Warn("failed to encode render to jpeg", "err", err.Error())
+		return err
+	}
+
+	err = p.previewStorage.Store(filepath, &buf)
+	if err != nil {
+		slog.Warn("failed to store preview", "err", err.Error())
+	}
+	return err
 }
 
 func NewPDFAnalyzer(documentStorage DocumentStorage, previewStorage DocumentPreviewStorage) *PDFAnalyzer {
