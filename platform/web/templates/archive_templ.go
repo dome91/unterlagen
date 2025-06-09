@@ -43,11 +43,7 @@ func Archive(currentFolderID string, documents []archive.Document, folders []arc
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = CreateFolderModal(currentFolderID).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"container mx-auto my-8\"><div class=\"flex justify-between items-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"container mx-auto my-8\"><div class=\"flex justify-between items-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -88,7 +84,7 @@ func Archive(currentFolderID string, documents []archive.Document, folders []arc
 				}
 			}
 			if len(documents) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<h2 class=\"text-lg font-medium mb-4\">Documents</h2><div class=\"grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<h2 class=\"text-lg font-medium my-4\">Documents</h2><div class=\"grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -104,6 +100,10 @@ func Archive(currentFolderID string, documents []archive.Document, folders []arc
 				}
 			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = CreateFolderModal(currentFolderID).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -138,7 +138,7 @@ func CreateFolderButton() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<button onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;hidden&#39;)\" class=\"btn btn-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<button onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;modal-open&#39;)\" class=\"btn btn-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -175,7 +175,7 @@ func CreateFolderModal(parentFolderID string) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div id=\"createFolderModal\" class=\"hidden modal modal-open\"><div class=\"modal-box\"><form action=\"/archive/folders\" method=\"POST\"><div class=\"flex justify-between items-center mb-4\"><h3 class=\"font-bold text-lg\">Create Folder</h3><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;)\" class=\"btn btn-sm btn-circle btn-ghost\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div id=\"createFolderModal\" class=\"hidden modal\"><div class=\"modal-box\"><form action=\"/archive/folders\" method=\"POST\"><div class=\"flex justify-between items-center mb-4\"><h3 class=\"font-bold text-lg\">Create Folder</h3><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\" class=\"btn btn-sm btn-circle btn-ghost\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -196,7 +196,7 @@ func CreateFolderModal(parentFolderID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"form-control w-full\"><label for=\"folderName\" class=\"label\"><span class=\"label-text\">Folder Name</span></label> <input type=\"text\" id=\"folderName\" name=\"name\" required class=\"input input-bordered w-full\"></div><div class=\"modal-action\"><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;)\" class=\"btn btn-ghost\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create Folder</button></div></form></div><div class=\"modal-backdrop\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;)\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"form-control w-full\"><label for=\"folderName\" class=\"label\"><span class=\"label-text\">Folder Name</span></label> <input type=\"text\" id=\"folderName\" name=\"name\" required class=\"input input-bordered w-full\"></div><div class=\"modal-action\"><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\" class=\"btn btn-ghost\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create Folder</button></div></form></div><div class=\"modal-backdrop\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

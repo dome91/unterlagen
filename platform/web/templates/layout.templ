@@ -28,11 +28,13 @@ templ baseLayout(notifications []Notification) {
 
 templ authenticatedLayout(notifications []Notification, page Page) {
 	@baseLayout(notifications) {
-		@Navbar(page)
-		<div class="m-4">
-			{ children... }
+		<div class="min-h-screen">
+			@Navbar(page)
+			<main class="overflow-auto">
+				{ children... }
+			</main>
+			@Dock()
 		</div>
-		@Dock()
 	}
 }
 
