@@ -118,7 +118,6 @@ type documents struct {
 	storage        DocumentStorage
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
-	analyzers      map[Filetype]DocumentAnalyzer
 	taskScheduler  *common.TaskScheduler
 }
 
@@ -290,23 +289,25 @@ type DocumentProcessingPayload struct {
 	DocumentID string `json:"document_id"`
 }
 
-func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, jobScheduler *common.JobScheduler, taskScheduler *common.TaskScheduler) *documents {
-	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage)
-	analyzers := make(map[Filetype]DocumentAnalyzer)
-	analyzers[PDF] = pdfAnalyzer
-
-	asyncProcessor := NewAsyncDocumentProcessor(repository, storage, previewStorage, messages)
+func newDocuments(
+	repository DocumentRepository,
+	storage DocumentStorage,
+	previewStorage DocumentPreviewStorage,
+	messages DocumentMessages,
+	jobScheduler *common.JobScheduler,
+	taskScheduler *common.TaskScheduler,
+	shutdown *common.Shutdown) *documents {
 
 	documents := &documents{
 		repository:     repository,
 		storage:        storage,
 		previewStorage: previewStorage,
 		messages:       messages,
-		analyzers:      analyzers,
 		taskScheduler:  taskScheduler,
 	}
 
+	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, shutdown)
 	jobScheduler.Schedule(documents.emptyTrash)
-	taskScheduler.RegisterWorker(asyncProcessor)
+	taskScheduler.RegisterWorker(documentProcessor)
 	return documents
 }
