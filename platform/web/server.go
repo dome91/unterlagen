@@ -156,7 +156,7 @@ func (server *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) home(w http.ResponseWriter, r *http.Request) {
 	notifications := server.buildNotifications(r, w)
-	templates.Home(notifications).Render(r.Context(), w)
+	templates.Home(notifications, server.isAdmin(r)).Render(r.Context(), w)
 }
 
 func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +188,7 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notifications := server.buildNotifications(r, w)
-	templates.Archive(folderID, documents, folders, hierarchy, notifications).Render(r.Context(), w)
+	templates.Archive(folderID, documents, folders, hierarchy, notifications, server.isAdmin(r)).Render(r.Context(), w)
 }
 
 func (server *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
@@ -290,7 +290,7 @@ func (server *Server) getDocumentDetails(w http.ResponseWriter, r *http.Request)
 	}
 
 	notifications := server.buildNotifications(r, w)
-	templates.DocumentDetails(document, notifications).Render(r.Context(), w)
+	templates.DocumentDetails(document, notifications, server.isAdmin(r)).Render(r.Context(), w)
 }
 
 func (server *Server) downloadDocument(w http.ResponseWriter, r *http.Request) {
@@ -622,9 +622,7 @@ func (server *Server) requireLogin(next http.Handler) http.Handler {
 
 func (server *Server) requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session := server.getSession(r)
-		role := session.Values["role"].(administration.UserRole)
-		if role != administration.UserRoleAdmin {
+		if !server.isAdmin(r) {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -653,6 +651,11 @@ func (server *Server) getAuthenticatedUser(r *http.Request) string {
 	}
 
 	return username.(string)
+}
+
+func (server *Server) isAdmin(r *http.Request) bool {
+	session := server.getSession(r)
+	return session.Values["role"].(administration.UserRole) == administration.UserRoleAdmin
 }
 
 func NewServer(

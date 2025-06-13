@@ -26,10 +26,10 @@ templ baseLayout(notifications []Notification) {
 	</html>
 }
 
-templ authenticatedLayout(notifications []Notification, page Page) {
+templ authenticatedLayout(notifications []Notification, page Page, isAdmin bool) {
 	@baseLayout(notifications) {
 		<div class="min-h-screen">
-			@Navbar(page)
+			@Navbar(page, isAdmin)
 			<main class="overflow-auto">
 				{ children... }
 			</main>
@@ -46,7 +46,7 @@ templ unauthenticatedLayout(notifications []Notification) {
 	}
 }
 
-templ Navbar(page Page) {
+templ Navbar(page Page, isAdmin bool) {
 	<div class="navbar shadow-sm max-sm:hidden">
 		<div class="navbar-start">
 			<a class="btn btn-ghost text-xl" href="/">Unterlagen</a>
@@ -59,12 +59,14 @@ templ Navbar(page Page) {
 						Archive
 					</a>
 				</li>
-				<li>
-					<a class={ templ.KV("menu-active", page == PageAdmin) } href="/admin">
-						@AdminIcon("size-6")
-						Administration
-					</a>
-				</li>
+				if isAdmin {
+					<li>
+						<a class={ templ.KV("menu-active", page == PageAdmin) } href="/admin">
+							@AdminIcon("size-6")
+							Administration
+						</a>
+					</li>
+				}
 			</ul>
 		</div>
 		<div class="navbar-end">

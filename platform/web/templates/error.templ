@@ -22,7 +22,7 @@ type ErrorData struct {
 
 // Error renders a generic error page with customizable content
 templ Error(data ErrorData) {
-	@authenticatedLayout(nil, PageError) {
+	@authenticatedLayout(nil, PageError, false) {
 		<div class="hero min-h-[70vh]">
 			<div class="hero-content text-center">
 				<div class="max-w-md">
