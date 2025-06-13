@@ -91,4 +91,5 @@ type TaskRepository interface {
 	FindAll() ([]Task, error)
 	FindPaginated(limit, offset int) ([]Task, int, error)
 	DeleteByID(id string) error
+	DeleteCompleted() error
 }
