@@ -19,6 +19,7 @@ func New(
 	userMessages administration.UserMessages,
 	jobScheduler *common.JobScheduler,
 	taskScheduler *common.TaskScheduler,
+	shutdown *common.Shutdown,
 ) *Archive {
 	return &Archive{
 		documents: newDocuments(
@@ -28,6 +29,7 @@ func New(
 			documentMessages,
 			jobScheduler,
 			taskScheduler,
+			shutdown,
 		),
 		folders: newFolders(
 			folderRepository,
