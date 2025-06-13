@@ -436,11 +436,20 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if there are any completed tasks across all pages
+	hasCompletedTasks, err := server.administration.HasCompletedTasks()
+	if err != nil {
+		slog.Error("failed to check for completed tasks", slog.String("error", err.Error()))
+		// Non-critical error, continue with hasCompletedTasks = false
+		hasCompletedTasks = false
+	}
+
 	properties := templates.TaskTabProperties{
-		Tasks:       tasks,
-		CurrentPage: page,
-		TotalPages:  totalPages,
-		TotalTasks:  totalTasks,
+		Tasks:             tasks,
+		CurrentPage:       page,
+		TotalPages:        totalPages,
+		TotalTasks:        totalTasks,
+		HasCompletedTasks: hasCompletedTasks,
 	}
 
 	runtimeInfo := server.administration.GetRuntimeInfo()
@@ -500,6 +509,22 @@ func (server *Server) handleForceGC(w http.ResponseWriter, r *http.Request) {
 	runtime.GC()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("GC forced"))
+}
+
+func (server *Server) handleClearCompletedTasks(w http.ResponseWriter, r *http.Request) {
+	session := server.getSession(r)
+	err := server.administration.ClearCompletedTasks()
+	if err != nil {
+		slog.Error("failed to clear completed tasks", slog.String("error", err.Error()))
+		session.AddFlash("Failed to clear completed tasks", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, "/admin?tab=tasks", http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Completed tasks cleared successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, "/admin?tab=tasks", http.StatusFound)
 }
 
 func (server *Server) buildNotifications(r *http.Request, w http.ResponseWriter) []templates.Notification {
@@ -674,6 +699,7 @@ func NewServer(
 				router.Post("/admin/settings", server.handleUpdateSettings)
 				router.Post("/admin/users", server.handleCreateUser)
 				router.Post("/admin/runtime/gc", server.handleForceGC)
+				router.Post("/admin/tasks/clear-completed", server.handleClearCompletedTasks)
 			})
 		})
 	})

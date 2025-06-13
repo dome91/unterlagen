@@ -74,6 +74,25 @@ func (a *Administration) GetRuntimeInfo() RuntimeInfo {
 	}
 }
 
+func (a *Administration) HasCompletedTasks() (bool, error) {
+	tasks, err := a.taskRepository.FindAll()
+	if err != nil {
+		return false, err
+	}
+
+	for _, task := range tasks {
+		if task.Status == common.TaskStatusCompleted {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (a *Administration) ClearCompletedTasks() error {
+	return a.taskRepository.DeleteCompleted()
+}
+
 func formatUptime(uptime time.Duration) string {
 	days := int(uptime.Hours()) / 24
 	hours := int(uptime.Hours()) % 24

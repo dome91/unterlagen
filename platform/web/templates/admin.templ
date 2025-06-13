@@ -153,10 +153,11 @@ templ UserTab(currentTab string, users []administration.User) {
 }
 
 type TaskTabProperties struct {
-	Tasks       []common.Task
-	CurrentPage int
-	TotalPages  int
-	TotalTasks  int
+	Tasks             []common.Task
+	CurrentPage       int
+	TotalPages        int
+	TotalTasks        int
+	HasCompletedTasks bool
 }
 
 func (p TaskTabProperties) TasksFrom() string {
@@ -172,6 +173,7 @@ templ TaskTab(currentTab string, properties TaskTabProperties) {
 		totalTasks := properties.TotalTasks
 		totalPages := properties.TotalPages
 		currentPage := properties.CurrentPage
+		hasCompletedTasks := properties.HasCompletedTasks
 	}}
 	<a href="/admin?tab=tasks" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "tasks") }>Task Management</a>
 	<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "tasks") }>
@@ -182,7 +184,14 @@ templ TaskTab(currentTab string, properties TaskTabProperties) {
 			</div>
 			<div class="card bg-base-200 shadow">
 				<div class="card-body">
-					<h3 class="card-title text-lg">Task Queue</h3>
+					<div class="flex justify-between items-center mb-4">
+						<h3 class="card-title text-lg">Task Queue</h3>
+						<form action="/admin/tasks/clear-completed" method="POST" onsubmit="return confirm('Are you sure you want to delete all completed tasks? This action cannot be undone.')">
+							<button type="submit" class="btn btn-sm btn-outline btn-error" disabled?={ !hasCompletedTasks }>
+								Clear Completed Tasks
+							</button>
+						</form>
+					</div>
 					<div class="overflow-x-auto">
 						<table class="table table-zebra">
 							<thead>
