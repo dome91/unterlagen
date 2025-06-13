@@ -46,7 +46,7 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 			if (prevBtn) prevBtn.disabled = currentPage === 0;
 			if (nextBtn) nextBtn.disabled = currentPage === totalPages - 1;
 		}
-		
+
 		// Initialize when DOM is loaded
 		document.addEventListener('DOMContentLoaded', function() {
 			const previewSection = document.getElementById('previewImage');
@@ -81,10 +81,12 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 								@ArrowDownTrayIcon("size-5")
 								Download
 							</a>
-							<button onclick="document.getElementById('deleteModal').showModal()" class="btn btn-error">
-								@TrashIcon("size-5")
-								Delete
-							</button>
+							<form method="POST" action={ "/archive/documents/" + document.ID + "/delete" } class="inline" onsubmit="return confirm('Are you sure you want to delete this item?');">
+								<button type="submit" class="btn btn-error">
+									@TrashIcon("size-5")
+									Delete
+								</button>
+							</form>
 						</div>
 					</div>
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -167,28 +169,7 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 				</div>
 			</div>
 		</div>
-		@DeleteDocumentModal(document.ID)
 	}
-}
-
-templ DeleteDocumentModal(documentID string) {
-	<dialog id="deleteModal" class="modal">
-		<div class="modal-box">
-			<h3 class="font-bold text-lg mb-4">Delete Document</h3>
-			<p class="mb-6">Are you sure you want to delete this document? This action cannot be undone.</p>
-			<div class="modal-action">
-				<form method="dialog">
-					<button class="btn btn-ghost">Cancel</button>
-				</form>
-				<form action={ templ.SafeURL("/archive/documents/" + documentID + "/delete") } method="POST">
-					<button class="btn btn-error">Delete</button>
-				</form>
-			</div>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
 }
 
 func formatFilesize(size uint64) string {
