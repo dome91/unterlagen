@@ -166,6 +166,12 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 		folderID = folderIDs[0]
 	}
 
+	// Check if we should show trashed documents
+	showTrashed := false
+	if _, exists := r.URL.Query()["showTrashed"]; exists {
+		showTrashed = true
+	}
+
 	documents, err := server.archive.GetDocumentsInFolder(folderID)
 	if err != nil {
 		slog.Error("failed to get documents in folder", slog.String("folderID", folderID), slog.String("error", err.Error()))
@@ -188,7 +194,7 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notifications := server.buildNotifications(r, w)
-	templates.Archive(folderID, documents, folders, hierarchy, notifications, server.isAdmin(r)).Render(r.Context(), w)
+	templates.Archive(folderID, documents, folders, hierarchy, notifications, server.isAdmin(r), showTrashed).Render(r.Context(), w)
 }
 
 func (server *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
@@ -341,9 +347,32 @@ func (server *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	session.AddFlash("Document deleted successfully", "success")
+	session.AddFlash("Document trashed successfully", "success")
 	session.Save(r, w)
-	http.Redirect(w, r, "/archive", http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+}
+
+func (server *Server) handleRestoreDocument(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	if documentID == "" {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	session := server.getSession(r)
+	err := server.archive.RestoreDocument(documentID, user)
+	if err != nil {
+		slog.Error("failed to restore document", slog.String("error", err.Error()))
+		session.AddFlash("Failed to restore document", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Document restored successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
 }
 
 func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request) {
@@ -699,6 +728,7 @@ func NewServer(
 			router.Get("/archive/documents/{id}/download", server.downloadDocument)
 			router.Get("/archive/documents/{id}/previews/{page}", server.getDocumentPreview)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
+			router.Post("/archive/documents/{id}/restore", server.handleRestoreDocument)
 
 			router.Group(func(router chi.Router) {
 				router.Use(server.requireAdmin)
