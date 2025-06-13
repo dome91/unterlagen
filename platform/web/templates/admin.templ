@@ -312,10 +312,10 @@ templ RuntimeTab(currentTab string, info administration.RuntimeInfo) {
 					<h3 class="card-title text-lg">Actions</h3>
 					<p class="text-base-content/70 mb-4">Trigger runtime operations</p>
 					<div class="flex gap-3">
-						<button class="btn btn-outline btn-primary" onclick="location.reload()">
+						<button class="btn btn-outline btn-primary" id="refreshButton">
 							Refresh Data
 						</button>
-						<button class="btn btn-outline btn-secondary" onclick="fetch('/admin/runtime/gc', {method: 'POST'}).then(() => location.reload())">
+						<button class="btn btn-outline btn-secondary" id="forceGcButton">
 							Force GC
 						</button>
 					</div>
@@ -323,4 +323,14 @@ templ RuntimeTab(currentTab string, info administration.RuntimeInfo) {
 			</div>
 		</div>
 	</div>
+	<script>
+		document.getElementById('refreshButton').addEventListener('click', function() {
+			location.reload();
+		});
+
+		document.getElementById('forceGcButton').addEventListener('click', function() {
+			fetch('/admin/runtime/gc', {method: 'POST'})
+				.then(() => location.reload());
+		});
+	</script>
 }

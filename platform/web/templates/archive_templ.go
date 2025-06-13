@@ -138,7 +138,7 @@ func CreateFolderButton() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<button onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;modal-open&#39;)\" class=\"btn btn-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<button id=\"openCreateFolderModalButton\" class=\"btn btn-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -175,7 +175,7 @@ func CreateFolderModal(parentFolderID string) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div id=\"createFolderModal\" class=\"hidden modal\"><div class=\"modal-box\"><form action=\"/archive/folders\" method=\"POST\"><div class=\"flex justify-between items-center mb-4\"><h3 class=\"font-bold text-lg\">Create Folder</h3><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\" class=\"btn btn-sm btn-circle btn-ghost\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div id=\"createFolderModal\" class=\"hidden modal\"><div class=\"modal-box\"><form action=\"/archive/folders\" method=\"POST\"><div class=\"flex justify-between items-center mb-4\"><h3 class=\"font-bold text-lg\">Create Folder</h3><button type=\"button\" id=\"closeModalXButton\" class=\"btn btn-sm btn-circle btn-ghost\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -196,7 +196,7 @@ func CreateFolderModal(parentFolderID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"form-control w-full\"><label for=\"folderName\" class=\"label\"><span class=\"label-text\">Folder Name</span></label> <input type=\"text\" id=\"folderName\" name=\"name\" required class=\"input input-bordered w-full\"></div><div class=\"modal-action\"><button type=\"button\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\" class=\"btn btn-ghost\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create Folder</button></div></form></div><div class=\"modal-backdrop\" onclick=\"document.getElementById(&#39;createFolderModal&#39;).classList.add(&#39;hidden&#39;); document.getElementById(&#39;createFolderModal&#39;).classList.remove(&#39;modal-open&#39;)\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"form-control w-full\"><label for=\"folderName\" class=\"label\"><span class=\"label-text\">Folder Name</span></label> <input type=\"text\" id=\"folderName\" name=\"name\" required class=\"input input-bordered w-full\"></div><div class=\"modal-action\"><button type=\"button\" id=\"cancelCreateFolderButton\" class=\"btn btn-ghost\">Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Create Folder</button></div></form></div><div class=\"modal-backdrop\" id=\"modalBackdrop\"></div></div><script>\n\t\t// Open modal\n\t\tdocument.getElementById('openCreateFolderModalButton').addEventListener('click', function() {\n\t\t\tdocument.getElementById('createFolderModal').classList.remove('hidden');\n\t\t\tdocument.getElementById('createFolderModal').classList.add('modal-open');\n\t\t});\n\n\t\t// Close modal with X button\n\t\tdocument.getElementById('closeModalXButton').addEventListener('click', function() {\n\t\t\tdocument.getElementById('createFolderModal').classList.add('hidden');\n\t\t\tdocument.getElementById('createFolderModal').classList.remove('modal-open');\n\t\t});\n\n\t\t// Close modal with Cancel button\n\t\tdocument.getElementById('cancelCreateFolderButton').addEventListener('click', function() {\n\t\t\tdocument.getElementById('createFolderModal').classList.add('hidden');\n\t\t\tdocument.getElementById('createFolderModal').classList.remove('modal-open');\n\t\t});\n\n\t\t// Close modal when clicking on backdrop\n\t\tdocument.getElementById('modalBackdrop').addEventListener('click', function() {\n\t\t\tdocument.getElementById('createFolderModal').classList.add('hidden');\n\t\t\tdocument.getElementById('createFolderModal').classList.remove('modal-open');\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -225,14 +225,14 @@ func DocumentUploadButton(folderID string) templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<form action=\"/archive/documents\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"folderID\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<form action=\"/archive/documents\" method=\"post\" enctype=\"multipart/form-data\" id=\"documentUploadForm\"><input type=\"hidden\" name=\"folderID\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(folderID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 92, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 117, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -246,7 +246,7 @@ func DocumentUploadButton(folderID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span>Upload Documents</span> <input type=\"file\" name=\"documents\" multiple accept=\"application/pdf\" class=\"hidden\" onchange=\"this.form.submit()\"></label></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span>Upload Documents</span> <input type=\"file\" name=\"documents\" multiple accept=\"application/pdf\" class=\"hidden\" id=\"documentFileInput\"></label></form><script>\n\t\tdocument.getElementById('documentFileInput').addEventListener('change', function() {\n\t\t\tdocument.getElementById('documentUploadForm').submit();\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -299,7 +299,7 @@ func DocumentCard(document archive.Document) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(document.Name())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 105, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 135, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func FolderCard(name string, id string) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 114, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 144, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -430,7 +430,7 @@ func Breadcrumbs(breadcrumbs []Breadcrumb) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(breadcrumb.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 146, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 176, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -457,7 +457,7 @@ func Breadcrumbs(breadcrumbs []Breadcrumb) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(breadcrumb.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 150, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/archive.templ`, Line: 180, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
