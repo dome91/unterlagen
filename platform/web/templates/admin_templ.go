@@ -74,7 +74,7 @@ func Administration(notifications []Notification, currentTab string, settings ad
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = authenticatedLayout(notifications, PageAdmin).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = authenticatedLayout(notifications, PageAdmin, true).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

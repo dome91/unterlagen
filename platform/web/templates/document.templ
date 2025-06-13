@@ -3,7 +3,7 @@ package templates
 import "unterlagen/features/archive"
 import "fmt"
 
-templ DocumentDetails(document archive.Document, notifications []Notification) {
+templ DocumentDetails(document archive.Document, notifications []Notification, isAdmin bool) {
 	<script>
 		let currentPage = 0;
 		let totalPages = 0;
@@ -58,7 +58,7 @@ templ DocumentDetails(document archive.Document, notifications []Notification) {
 			}
 		});
 	</script>
-	@authenticatedLayout(notifications, PageArchive) {
+	@authenticatedLayout(notifications, PageArchive, isAdmin) {
 		<div class="container mx-auto my-8">
 			<div class="flex items-center gap-4 mb-6">
 				<a href="/archive" class="btn btn-ghost btn-sm">
