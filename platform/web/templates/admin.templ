@@ -321,25 +321,17 @@ templ RuntimeTab(currentTab string, info administration.RuntimeInfo) {
 					<h3 class="card-title text-lg">Actions</h3>
 					<p class="text-base-content/70 mb-4">Trigger runtime operations</p>
 					<div class="flex gap-3">
-						<button class="btn btn-outline btn-primary" id="refreshButton">
+						<a href="/admin?tab=runtime" class="btn btn-outline btn-primary">
 							Refresh Data
-						</button>
-						<button class="btn btn-outline btn-secondary" id="forceGcButton">
-							Force GC
-						</button>
+						</a>
+						<form action="/admin/runtime/gc" method="POST" class="inline">
+							<button type="submit" class="btn btn-outline btn-secondary">
+								Force GC
+							</button>
+						</form>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<script>
-		document.getElementById('refreshButton').addEventListener('click', function() {
-			location.reload();
-		});
-
-		document.getElementById('forceGcButton').addEventListener('click', function() {
-			fetch('/admin/runtime/gc', {method: 'POST'})
-				.then(() => location.reload());
-		});
-	</script>
 }

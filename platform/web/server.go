@@ -507,8 +507,12 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) handleForceGC(w http.ResponseWriter, r *http.Request) {
 	runtime.GC()
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("GC forced"))
+
+	session := server.getSession(r)
+	session.AddFlash("Garbage collection triggered successfully", "success")
+	session.Save(r, w)
+
+	http.Redirect(w, r, "/admin?tab=runtime", http.StatusFound)
 }
 
 func (server *Server) handleClearCompletedTasks(w http.ResponseWriter, r *http.Request) {
