@@ -35,7 +35,7 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 
 templ CreateFolderButton() {
 	<button
-		onclick="document.getElementById('createFolderModal').classList.remove('hidden'); document.getElementById('createFolderModal').classList.add('modal-open')"
+		id="openCreateFolderModalButton"
 		class="btn btn-primary"
 	>
 		@FolderPlusIcon("size-5")
@@ -49,7 +49,7 @@ templ CreateFolderModal(parentFolderID string) {
 			<form action="/archive/folders" method="POST">
 				<div class="flex justify-between items-center mb-4">
 					<h3 class="font-bold text-lg">Create Folder</h3>
-					<button type="button" onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')" class="btn btn-sm btn-circle btn-ghost">
+					<button type="button" id="closeModalXButton" class="btn btn-sm btn-circle btn-ghost">
 						@XMarkIcon("size-5")
 					</button>
 				</div>
@@ -69,7 +69,7 @@ templ CreateFolderModal(parentFolderID string) {
 				<div class="modal-action">
 					<button
 						type="button"
-						onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')"
+						id="cancelCreateFolderButton"
 						class="btn btn-ghost"
 					>
 						Cancel
@@ -83,19 +83,49 @@ templ CreateFolderModal(parentFolderID string) {
 				</div>
 			</form>
 		</div>
-		<div class="modal-backdrop" onclick="document.getElementById('createFolderModal').classList.add('hidden'); document.getElementById('createFolderModal').classList.remove('modal-open')"></div>
+		<div class="modal-backdrop" id="modalBackdrop"></div>
 	</div>
+	<script>
+		// Open modal
+		document.getElementById('openCreateFolderModalButton').addEventListener('click', function() {
+			document.getElementById('createFolderModal').classList.remove('hidden');
+			document.getElementById('createFolderModal').classList.add('modal-open');
+		});
+
+		// Close modal with X button
+		document.getElementById('closeModalXButton').addEventListener('click', function() {
+			document.getElementById('createFolderModal').classList.add('hidden');
+			document.getElementById('createFolderModal').classList.remove('modal-open');
+		});
+
+		// Close modal with Cancel button
+		document.getElementById('cancelCreateFolderButton').addEventListener('click', function() {
+			document.getElementById('createFolderModal').classList.add('hidden');
+			document.getElementById('createFolderModal').classList.remove('modal-open');
+		});
+
+		// Close modal when clicking on backdrop
+		document.getElementById('modalBackdrop').addEventListener('click', function() {
+			document.getElementById('createFolderModal').classList.add('hidden');
+			document.getElementById('createFolderModal').classList.remove('modal-open');
+		});
+	</script>
 }
 
 templ DocumentUploadButton(folderID string) {
-	<form action="/archive/documents" method="post" enctype="multipart/form-data">
+	<form action="/archive/documents" method="post" enctype="multipart/form-data" id="documentUploadForm">
 		<input type="hidden" name="folderID" value={ folderID }/>
 		<label class="btn btn-primary">
 			@ArrowUpTrayIcon("size-5")
 			<span>Upload Documents</span>
-			<input type="file" name="documents" multiple accept="application/pdf" class="hidden" onchange="this.form.submit()"/>
+			<input type="file" name="documents" multiple accept="application/pdf" class="hidden" id="documentFileInput"/>
 		</label>
 	</form>
+	<script>
+		document.getElementById('documentFileInput').addEventListener('change', function() {
+			document.getElementById('documentUploadForm').submit();
+		});
+	</script>
 }
 
 templ DocumentCard(document archive.Document) {

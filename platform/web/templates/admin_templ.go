@@ -800,7 +800,7 @@ func RuntimeTab(currentTab string, info administration.RuntimeInfo) templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</span></div></div></div></div></div><div class=\"card bg-base-200 shadow\"><div class=\"card-body\"><h3 class=\"card-title text-lg\">Actions</h3><p class=\"text-base-content/70 mb-4\">Trigger runtime operations</p><div class=\"flex gap-3\"><button class=\"btn btn-outline btn-primary\" onclick=\"location.reload()\">Refresh Data</button> <button class=\"btn btn-outline btn-secondary\" onclick=\"fetch(&#39;/admin/runtime/gc&#39;, {method: &#39;POST&#39;}).then(() =&gt; location.reload())\">Force GC</button></div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</span></div></div></div></div></div><div class=\"card bg-base-200 shadow\"><div class=\"card-body\"><h3 class=\"card-title text-lg\">Actions</h3><p class=\"text-base-content/70 mb-4\">Trigger runtime operations</p><div class=\"flex gap-3\"><button class=\"btn btn-outline btn-primary\" id=\"refreshButton\">Refresh Data</button> <button class=\"btn btn-outline btn-secondary\" id=\"forceGcButton\">Force GC</button></div></div></div></div></div><script>\n\t\tdocument.getElementById('refreshButton').addEventListener('click', function() {\n\t\t\tlocation.reload();\n\t\t});\n\n\t\tdocument.getElementById('forceGcButton').addEventListener('click', function() {\n\t\t\tfetch('/admin/runtime/gc', {method: 'POST'})\n\t\t\t\t.then(() => location.reload());\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
