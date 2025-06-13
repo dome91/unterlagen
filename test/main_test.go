@@ -67,7 +67,7 @@ func NewTestEnvironment() *TestEnvironment {
 	// Features
 	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
-	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler)
+	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
 
 	// Web
 	server := web.NewServer(administration, archive, shutdown, configuration)

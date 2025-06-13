@@ -77,6 +77,10 @@ func (document Document) ShouldBeDeleted() bool {
 	return time.Since(document.TrashedAt.Time) >= ThirtyDays
 }
 
+func (document Document) IsTrashed() bool {
+	return document.TrashedAt.Valid
+}
+
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
@@ -118,7 +122,6 @@ type documents struct {
 	storage        DocumentStorage
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
-	analyzers      map[Filetype]DocumentAnalyzer
 	taskScheduler  *common.TaskScheduler
 }
 
@@ -222,6 +225,20 @@ func (d *documents) TrashDocument(documentID string, owner string) error {
 	return d.repository.Save(document)
 }
 
+func (d *documents) RestoreDocument(documentID string, owner string) error {
+	document, err := d.repository.FindByID(documentID)
+	if err != nil {
+		return err
+	}
+
+	if document.Owner != owner {
+		return errors.New("unauthorized")
+	}
+
+	document.TrashedAt.Valid = false
+	return d.repository.Save(document)
+}
+
 func (d *documents) emptyTrash(ctx context.Context) {
 	ticker := time.NewTicker(1 * time.Hour)
 	for {
@@ -290,23 +307,25 @@ type DocumentProcessingPayload struct {
 	DocumentID string `json:"document_id"`
 }
 
-func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, jobScheduler *common.JobScheduler, taskScheduler *common.TaskScheduler) *documents {
-	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage)
-	analyzers := make(map[Filetype]DocumentAnalyzer)
-	analyzers[PDF] = pdfAnalyzer
-
-	asyncProcessor := NewAsyncDocumentProcessor(repository, storage, previewStorage, messages)
+func newDocuments(
+	repository DocumentRepository,
+	storage DocumentStorage,
+	previewStorage DocumentPreviewStorage,
+	messages DocumentMessages,
+	jobScheduler *common.JobScheduler,
+	taskScheduler *common.TaskScheduler,
+	shutdown *common.Shutdown) *documents {
 
 	documents := &documents{
 		repository:     repository,
 		storage:        storage,
 		previewStorage: previewStorage,
 		messages:       messages,
-		analyzers:      analyzers,
 		taskScheduler:  taskScheduler,
 	}
 
+	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, shutdown)
 	jobScheduler.Schedule(documents.emptyTrash)
-	taskScheduler.RegisterWorker(asyncProcessor)
+	taskScheduler.RegisterWorker(documentProcessor)
 	return documents
 }

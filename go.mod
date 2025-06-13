@@ -51,12 +51,12 @@ require (
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.32.0 // indirect
+	golang.org/x/tools v0.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
-	github.com/a-h/templ v0.3.865
+	github.com/a-h/templ v0.3.898
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/h2non/filetype v1.1.3
 	github.com/jmoiron/sqlx v1.4.0

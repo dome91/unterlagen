@@ -8,7 +8,7 @@ import (
 )
 
 templ Administration(notifications []Notification, currentTab string, settings administration.Settings, users []administration.User, taskTabProperties TaskTabProperties, runtimeInfo administration.RuntimeInfo) {
-	@authenticatedLayout(notifications, PageAdmin) {
+	@authenticatedLayout(notifications, PageAdmin, true) {
 		<div class="max-w-4xl mx-auto">
 			<h1 class="text-3xl font-bold mb-8">Administration</h1>
 			<div role="tablist" class="tabs tabs-lifted">
@@ -153,10 +153,11 @@ templ UserTab(currentTab string, users []administration.User) {
 }
 
 type TaskTabProperties struct {
-	Tasks       []common.Task
-	CurrentPage int
-	TotalPages  int
-	TotalTasks  int
+	Tasks             []common.Task
+	CurrentPage       int
+	TotalPages        int
+	TotalTasks        int
+	HasCompletedTasks bool
 }
 
 func (p TaskTabProperties) TasksFrom() string {
@@ -172,6 +173,7 @@ templ TaskTab(currentTab string, properties TaskTabProperties) {
 		totalTasks := properties.TotalTasks
 		totalPages := properties.TotalPages
 		currentPage := properties.CurrentPage
+		hasCompletedTasks := properties.HasCompletedTasks
 	}}
 	<a href="/admin?tab=tasks" role="tab" class={ "tab", templ.KV("tab-active", currentTab == "tasks") }>Task Management</a>
 	<div role="tabpanel" class={ "tab-content bg-base-100 border-base-300 rounded-box p-6", templ.KV("hidden", currentTab != "tasks") }>
@@ -182,7 +184,14 @@ templ TaskTab(currentTab string, properties TaskTabProperties) {
 			</div>
 			<div class="card bg-base-200 shadow">
 				<div class="card-body">
-					<h3 class="card-title text-lg">Task Queue</h3>
+					<div class="flex justify-between items-center mb-4">
+						<h3 class="card-title text-lg">Task Queue</h3>
+						<form action="/admin/tasks/clear-completed" method="POST" onsubmit="return confirm('Are you sure you want to delete all completed tasks? This action cannot be undone.')">
+							<button type="submit" class="btn btn-sm btn-outline btn-error" disabled?={ !hasCompletedTasks }>
+								Clear Completed Tasks
+							</button>
+						</form>
+					</div>
 					<div class="overflow-x-auto">
 						<table class="table table-zebra">
 							<thead>
@@ -312,12 +321,14 @@ templ RuntimeTab(currentTab string, info administration.RuntimeInfo) {
 					<h3 class="card-title text-lg">Actions</h3>
 					<p class="text-base-content/70 mb-4">Trigger runtime operations</p>
 					<div class="flex gap-3">
-						<button class="btn btn-outline btn-primary" onclick="location.reload()">
+						<a href="/admin?tab=runtime" class="btn btn-outline btn-primary">
 							Refresh Data
-						</button>
-						<button class="btn btn-outline btn-secondary" onclick="fetch('/admin/runtime/gc', {method: 'POST'}).then(() => location.reload())">
-							Force GC
-						</button>
+						</a>
+						<form action="/admin/runtime/gc" method="POST" class="inline">
+							<button type="submit" class="btn btn-outline btn-secondary">
+								Force GC
+							</button>
+						</form>
 					</div>
 				</div>
 			</div>

@@ -156,7 +156,7 @@ func (server *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) home(w http.ResponseWriter, r *http.Request) {
 	notifications := server.buildNotifications(r, w)
-	templates.Home(notifications).Render(r.Context(), w)
+	templates.Home(notifications, server.isAdmin(r)).Render(r.Context(), w)
 }
 
 func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
@@ -164,6 +164,12 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 	folderIDs := r.URL.Query()["folderID"]
 	if len(folderIDs) > 0 {
 		folderID = folderIDs[0]
+	}
+
+	// Check if we should show trashed documents
+	showTrashed := false
+	if _, exists := r.URL.Query()["showTrashed"]; exists {
+		showTrashed = true
 	}
 
 	documents, err := server.archive.GetDocumentsInFolder(folderID)
@@ -188,7 +194,7 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notifications := server.buildNotifications(r, w)
-	templates.Archive(folderID, documents, folders, hierarchy, notifications).Render(r.Context(), w)
+	templates.Archive(folderID, documents, folders, hierarchy, notifications, server.isAdmin(r), showTrashed).Render(r.Context(), w)
 }
 
 func (server *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
@@ -290,7 +296,7 @@ func (server *Server) getDocumentDetails(w http.ResponseWriter, r *http.Request)
 	}
 
 	notifications := server.buildNotifications(r, w)
-	templates.DocumentDetails(document, notifications).Render(r.Context(), w)
+	templates.DocumentDetails(document, notifications, server.isAdmin(r)).Render(r.Context(), w)
 }
 
 func (server *Server) downloadDocument(w http.ResponseWriter, r *http.Request) {
@@ -341,9 +347,32 @@ func (server *Server) handleDeleteDocument(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	session.AddFlash("Document deleted successfully", "success")
+	session.AddFlash("Document trashed successfully", "success")
 	session.Save(r, w)
-	http.Redirect(w, r, "/archive", http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+}
+
+func (server *Server) handleRestoreDocument(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	if documentID == "" {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	session := server.getSession(r)
+	err := server.archive.RestoreDocument(documentID, user)
+	if err != nil {
+		slog.Error("failed to restore document", slog.String("error", err.Error()))
+		session.AddFlash("Failed to restore document", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Document restored successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
 }
 
 func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request) {
@@ -436,11 +465,20 @@ func (server *Server) admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if there are any completed tasks across all pages
+	hasCompletedTasks, err := server.administration.HasCompletedTasks()
+	if err != nil {
+		slog.Error("failed to check for completed tasks", slog.String("error", err.Error()))
+		// Non-critical error, continue with hasCompletedTasks = false
+		hasCompletedTasks = false
+	}
+
 	properties := templates.TaskTabProperties{
-		Tasks:       tasks,
-		CurrentPage: page,
-		TotalPages:  totalPages,
-		TotalTasks:  totalTasks,
+		Tasks:             tasks,
+		CurrentPage:       page,
+		TotalPages:        totalPages,
+		TotalTasks:        totalTasks,
+		HasCompletedTasks: hasCompletedTasks,
 	}
 
 	runtimeInfo := server.administration.GetRuntimeInfo()
@@ -498,8 +536,28 @@ func (server *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) handleForceGC(w http.ResponseWriter, r *http.Request) {
 	runtime.GC()
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("GC forced"))
+
+	session := server.getSession(r)
+	session.AddFlash("Garbage collection triggered successfully", "success")
+	session.Save(r, w)
+
+	http.Redirect(w, r, "/admin?tab=runtime", http.StatusFound)
+}
+
+func (server *Server) handleClearCompletedTasks(w http.ResponseWriter, r *http.Request) {
+	session := server.getSession(r)
+	err := server.administration.ClearCompletedTasks()
+	if err != nil {
+		slog.Error("failed to clear completed tasks", slog.String("error", err.Error()))
+		session.AddFlash("Failed to clear completed tasks", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, "/admin?tab=tasks", http.StatusFound)
+		return
+	}
+
+	session.AddFlash("Completed tasks cleared successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, "/admin?tab=tasks", http.StatusFound)
 }
 
 func (server *Server) buildNotifications(r *http.Request, w http.ResponseWriter) []templates.Notification {
@@ -593,9 +651,7 @@ func (server *Server) requireLogin(next http.Handler) http.Handler {
 
 func (server *Server) requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session := server.getSession(r)
-		role := session.Values["role"].(administration.UserRole)
-		if role != administration.UserRoleAdmin {
+		if !server.isAdmin(r) {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -624,6 +680,11 @@ func (server *Server) getAuthenticatedUser(r *http.Request) string {
 	}
 
 	return username.(string)
+}
+
+func (server *Server) isAdmin(r *http.Request) bool {
+	session := server.getSession(r)
+	return session.Values["role"].(administration.UserRole) == administration.UserRoleAdmin
 }
 
 func NewServer(
@@ -667,6 +728,7 @@ func NewServer(
 			router.Get("/archive/documents/{id}/download", server.downloadDocument)
 			router.Get("/archive/documents/{id}/previews/{page}", server.getDocumentPreview)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
+			router.Post("/archive/documents/{id}/restore", server.handleRestoreDocument)
 
 			router.Group(func(router chi.Router) {
 				router.Use(server.requireAdmin)
@@ -674,6 +736,7 @@ func NewServer(
 				router.Post("/admin/settings", server.handleUpdateSettings)
 				router.Post("/admin/users", server.handleCreateUser)
 				router.Post("/admin/runtime/gc", server.handleForceGC)
+				router.Post("/admin/tasks/clear-completed", server.handleClearCompletedTasks)
 			})
 		})
 	})
