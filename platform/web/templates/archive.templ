@@ -2,7 +2,7 @@ package templates
 
 import "unterlagen/features/archive"
 
-templ Archive(currentFolderID string, documents []archive.Document, folders []archive.Folder, hierarchy []archive.Folder, notifications []Notification, isAdmin bool) {
+templ Archive(currentFolderID string, documents []archive.Document, folders []archive.Folder, hierarchy []archive.Folder, notifications []Notification, isAdmin bool, showTrashed bool) {
 	@authenticatedLayout(notifications, PageArchive, isAdmin) {
 		<div class="container mx-auto my-8">
 			<div class="flex justify-between items-center">
@@ -10,6 +10,7 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 				<div class="flex gap-4">
 					@DocumentUploadButton(currentFolderID)
 					@CreateFolderButton()
+					@FilterDropdown(currentFolderID, showTrashed)
 				</div>
 			</div>
 			if len(folders) > 0 {
@@ -24,7 +25,9 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 				<h2 class="text-lg font-medium my-4">Documents</h2>
 				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
 					for _, doc := range documents {
-						@DocumentCard(doc)
+						if showTrashed || !doc.IsTrashed() {
+							@DocumentCard(doc)
+						}
 					}
 				</div>
 			}
@@ -41,6 +44,40 @@ templ CreateFolderButton() {
 		@FolderPlusIcon("size-5")
 		<span class="hidden md:inline">New Folder</span>
 	</button>
+}
+
+templ FilterDropdown(folderID string, showTrashed bool) {
+	<div class="dropdown dropdown-end">
+		<label tabindex="0" class="btn btn-outline">
+			@FunnelIcon("size-5")
+			Filters
+		</label>
+		<div tabindex="0" class="dropdown-content z-[1] shadow-lg bg-base-200 rounded-box w-64 mt-1">
+			<div class="p-3 border-b border-base-300 font-medium text-sm">
+				Document Filters
+			</div>
+			<form action="/archive" method="GET" class="p-3">
+				<input type="hidden" name="folderID" value={ folderID }/>
+				<div class="form-control">
+					<label class="cursor-pointer label justify-start gap-3 hover:bg-base-300 rounded-md px-2">
+						<input
+							type="checkbox"
+							name="showTrashed"
+							class="checkbox checkbox-sm checkbox-primary"
+							onchange="this.form.submit()"
+							if showTrashed {
+								checked
+							}
+						/>
+						<div>
+							<span class="label-text font-medium">Show trashed documents</span>
+							<p class="text-xs text-base-content/70 mt-0.5">Include documents that have been moved to trash</p>
+						</div>
+					</label>
+				</div>
+			</form>
+		</div>
+	</div>
 }
 
 templ CreateFolderModal(parentFolderID string) {
@@ -129,9 +166,13 @@ templ DocumentUploadButton(folderID string) {
 }
 
 templ DocumentCard(document archive.Document) {
-	<a href={ templ.SafeURL("/archive/documents/" + document.ID) } class="card card-compact bg-base-200 hover:bg-base-300 transition-colors">
+	<a href={ templ.SafeURL("/archive/documents/" + document.ID) } class={ "card card-compact transition-colors", templ.KV("opacity-50", document.IsTrashed()) }>
 		<div class="card-body items-center text-center">
-			@DocumentIcon("w-12 h-12 mb-2 text-base-content/70")
+			if document.IsTrashed() {
+				@TrashIcon("w-12 h-12 mb-2 text-error/70")
+			} else {
+				@DocumentIcon("w-12 h-12 mb-2 text-base-content/70")
+			}
 			<p class="text-sm break-words w-full">{ document.Name() }</p>
 		</div>
 	</a>

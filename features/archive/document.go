@@ -77,6 +77,10 @@ func (document Document) ShouldBeDeleted() bool {
 	return time.Since(document.TrashedAt.Time) >= ThirtyDays
 }
 
+func (document Document) IsTrashed() bool {
+	return document.TrashedAt.Valid
+}
+
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
@@ -218,6 +222,20 @@ func (d *documents) TrashDocument(documentID string, owner string) error {
 
 	document.TrashedAt.Valid = true
 	document.TrashedAt.Time = time.Now()
+	return d.repository.Save(document)
+}
+
+func (d *documents) RestoreDocument(documentID string, owner string) error {
+	document, err := d.repository.FindByID(documentID)
+	if err != nil {
+		return err
+	}
+
+	if document.Owner != owner {
+		return errors.New("unauthorized")
+	}
+
+	document.TrashedAt.Valid = false
 	return d.repository.Save(document)
 }
 
