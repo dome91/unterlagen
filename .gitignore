@@ -2,4 +2,6 @@ tmp
 platform/web/node_modules
 platform/web/public
 .idea
+.vscode
+.claude
 dist/
