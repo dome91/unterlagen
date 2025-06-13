@@ -5,3 +5,4 @@ platform/web/public
 .vscode
 .claude
 dist/
+*_templ.go

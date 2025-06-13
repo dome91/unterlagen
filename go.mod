@@ -56,7 +56,7 @@ require (
 )
 
 require (
-	github.com/a-h/templ v0.3.865
+	github.com/a-h/templ v0.3.898
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/h2non/filetype v1.1.3
 	github.com/jmoiron/sqlx v1.4.0
