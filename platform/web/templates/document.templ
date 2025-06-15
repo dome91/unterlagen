@@ -109,18 +109,38 @@ templ documentInformation(document archive.Document) {
 }
 
 templ documentPreview(document archive.Document) {
-	<div>
+	@DocumentPreviewComponent(document, 0)
+}
+
+templ DocumentPreviewComponent(document archive.Document, currentPage int) {
+	<div id="preview-container">
 		<h3 class="text-lg font-semibold mb-3">Document Preview</h3>
 		<div class="card bg-base-100">
 			<div class="card-body p-0">
 				<!-- Preview Controls -->
 				<div class="flex items-center justify-between mb-4">
-					<button id="prevBtn" class="btn btn-outline btn-sm" disabled>
+					<button
+						hx-get={ fmt.Sprintf("/archive/documents/%s/preview-component/%d", document.ID, currentPage-1) }
+						hx-target="#preview-container"
+						class="btn btn-outline btn-sm"
+						if currentPage <= 0 {
+							disabled
+						}
+					>
 						@ArrowLeftIcon("size-4")
 						Previous
 					</button>
-					<span id="pageInfo" class="text-sm font-medium">Page 1 of { fmt.Sprintf("%d", len(document.PreviewFilepaths)) }</span>
-					<button id="nextBtn" class="btn btn-outline btn-sm">
+					<span class="text-sm font-medium">
+						Page { fmt.Sprintf("%d of %d", currentPage+1, len(document.PreviewFilepaths)) }
+					</span>
+					<button
+						hx-get={ fmt.Sprintf("/archive/documents/%s/preview-component/%d", document.ID, currentPage+1) }
+						hx-target="#preview-container"
+						class="btn btn-outline btn-sm"
+						if currentPage >= len(document.PreviewFilepaths)-1 {
+							disabled
+						}
+					>
 						Next
 						@ArrowRightIcon("size-4")
 					</button>
@@ -128,12 +148,9 @@ templ documentPreview(document archive.Document) {
 				<!-- Preview Image -->
 				<div class="flex justify-center bg-base-200 rounded-lg p-4">
 					<img
-						id="previewImage"
-						src={ templ.SafeURL(fmt.Sprintf("/archive/documents/%s/previews/0", document.ID)) }
+						src={ templ.SafeURL(fmt.Sprintf("/archive/documents/%s/previews/%d", document.ID, currentPage)) }
 						alt="Document preview"
 						class="max-w-full h-auto rounded shadow-lg max-h-[80vh]"
-						data-doc-id={ document.ID }
-						data-total-pages={ fmt.Sprintf("%d", len(document.PreviewFilepaths)) }
 					/>
 				</div>
 			</div>

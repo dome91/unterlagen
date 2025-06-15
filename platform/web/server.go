@@ -410,6 +410,36 @@ func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (server *Server) getDocumentPreviewComponent(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	pageNumberStr := chi.URLParam(r, "page")
+
+	if documentID == "" || pageNumberStr == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil {
+		http.Error(w, "Invalid page number", http.StatusBadRequest)
+		return
+	}
+
+	document, err := server.archive.GetDocument(documentID, user)
+	if err != nil {
+		http.Error(w, "Document not found", http.StatusNotFound)
+		return
+	}
+
+	if pageNumber < 0 || pageNumber >= len(document.PreviewFilepaths) {
+		http.Error(w, "Invalid page number", http.StatusBadRequest)
+		return
+	}
+
+	templates.DocumentPreviewComponent(document, pageNumber).Render(r.Context(), w)
+}
+
 func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	session := server.getSession(r)
 	session.Options.MaxAge = -1
@@ -728,6 +758,7 @@ func NewServer(
 			router.Get("/archive/documents/{id}", server.getDocumentDetails)
 			router.Get("/archive/documents/{id}/download", server.downloadDocument)
 			router.Get("/archive/documents/{id}/previews/{page}", server.getDocumentPreview)
+			router.Get("/archive/documents/{id}/preview-component/{page}", server.getDocumentPreviewComponent)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
 			router.Post("/archive/documents/{id}/restore", server.handleRestoreDocument)
 
