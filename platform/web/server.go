@@ -25,6 +25,7 @@ import (
 
 //go:generate go tool templ generate
 //go:generate npm run build:css
+//go:generate npm run build:js
 //go:embed public
 var public embed.FS
 

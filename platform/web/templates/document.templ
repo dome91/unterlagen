@@ -4,60 +4,6 @@ import "unterlagen/features/archive"
 import "fmt"
 
 templ DocumentDetails(document archive.Document, notifications []Notification, isAdmin bool) {
-	<script>
-		let currentPage = 0;
-		let totalPages = 0;
-		let documentId = '';
-
-		function initPreview(docId, pages) {
-			documentId = docId;
-			totalPages = pages;
-			currentPage = 0;
-			updatePreview();
-		}
-
-		function nextPage() {
-			console.log('nextPage clicked, currentPage:', currentPage, 'totalPages:', totalPages);
-			if (currentPage < totalPages - 1) {
-				currentPage++;
-				updatePreview();
-			}
-		}
-
-		function prevPage() {
-			console.log('prevPage clicked, currentPage:', currentPage, 'totalPages:', totalPages);
-			if (currentPage > 0) {
-				currentPage--;
-				updatePreview();
-			}
-		}
-
-		function updatePreview() {
-			const img = document.getElementById('previewImage');
-			const pageInfo = document.getElementById('pageInfo');
-			const prevBtn = document.getElementById('prevBtn');
-			const nextBtn = document.getElementById('nextBtn');
-
-			if (img && pageInfo) {
-				img.src = `/archive/documents/${documentId}/previews/${currentPage}`;
-				pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
-			}
-
-			if (prevBtn) prevBtn.disabled = currentPage === 0;
-			if (nextBtn) nextBtn.disabled = currentPage === totalPages - 1;
-		}
-
-		// Initialize when DOM is loaded
-		document.addEventListener('DOMContentLoaded', function() {
-			const previewSection = document.getElementById('previewImage');
-			if (previewSection) {
-				const docId = previewSection.getAttribute('data-doc-id');
-				const pages = parseInt(previewSection.getAttribute('data-total-pages'));
-				console.log('Initializing preview for document:', docId, 'with', pages, 'pages');
-				initPreview(docId, pages);
-			}
-		});
-	</script>
 	@authenticatedLayout(notifications, PageArchive, isAdmin) {
 		<div class="container mx-auto my-8">
 			<div class="flex items-center gap-4 mb-6">
@@ -68,121 +14,131 @@ templ DocumentDetails(document archive.Document, notifications []Notification, i
 			</div>
 			<div class="card bg-base-100">
 				<div class="card-body">
-					<div class="flex items-start justify-between mb-6">
-						<div class="flex items-center gap-4">
-							if document.IsTrashed() {
-								@TrashIcon("w-16 h-16 text-error")
-							} else {
-								@DocumentIcon("w-16 h-16 text-primary")
-							}
-							<div>
-								<h1 class="text-2xl font-bold">{ document.Name() }</h1>
-								<p class="text-base-content/70">{ document.Filename }</p>
-							</div>
-						</div>
-						<div class="flex gap-2">
-							<a href={ templ.SafeURL("/archive/documents/" + document.ID + "/download") } class="btn btn-primary">
-								@ArrowDownTrayIcon("size-5")
-								Download
-							</a>
-							if document.IsTrashed() {
-								<form method="POST" action={ "/archive/documents/" + document.ID + "/restore" } class="inline">
-									<button type="submit" class="btn btn-success">
-										@ArrowUpTrayIcon("size-5")
-										Restore
-									</button>
-								</form>
-							} else {
-								<form method="POST" action={ "/archive/documents/" + document.ID + "/delete" } class="inline" onsubmit="return confirm('Are you sure you want to trash this document?');">
-									<button type="submit" class="btn btn-error">
-										@TrashIcon("size-5")
-										Trash
-									</button>
-								</form>
-							}
-						</div>
-					</div>
+					@documentActions(document)
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-						<!-- Left Column: Document Information & Text Preview -->
-						<div class="flex flex-col max-h-[70vh] space-y-6">
-							<div class="flex-shrink-0">
-								<h3 class="text-lg font-semibold mb-3">Document Information</h3>
-								<div class="space-y-3">
-									<div class="flex justify-between">
-										<span class="font-medium">File Type:</span>
-										<span class="badge badge-outline">{ string(document.Filetype) }</span>
-									</div>
-									<div class="flex justify-between">
-										<span class="font-medium">File Size:</span>
-										<span>{ formatFilesize(document.Filesize) }</span>
-									</div>
-									<div class="flex justify-between">
-										<span class="font-medium">Created:</span>
-										<span>{ document.CreatedAt.Format("Jan 2, 2006 15:04") }</span>
-									</div>
-									<div class="flex justify-between">
-										<span class="font-medium">Updated:</span>
-										<span>{ document.UpdatedAt.Format("Jan 2, 2006 15:04") }</span>
-									</div>
-									<div class="flex justify-between">
-										<span class="font-medium">Owner:</span>
-										<span>{ document.Owner }</span>
-									</div>
-									if len(document.PreviewFilepaths) > 0 {
-										<div class="flex justify-between">
-											<span class="font-medium">Pages:</span>
-											<span>{ fmt.Sprintf("%d", len(document.PreviewFilepaths)) }</span>
-										</div>
-									}
-								</div>
-							</div>
-							if document.Text != "" {
-								<div class="flex flex-col min-h-0 flex-grow">
-									<h3 class="text-lg font-semibold mb-3 flex-shrink-0">Extracted Text Preview</h3>
-									<div class="bg-base-200 p-4 rounded-lg overflow-y-auto flex-grow">
-										<p class="text-sm whitespace-pre-wrap">{ document.Text }</p>
-									</div>
-								</div>
-							}
-						</div>
-						<!-- Right Column: Document Preview -->
+						@documentInformation(document)
 						if len(document.PreviewFilepaths) > 0 {
-							<div>
-								<h3 class="text-lg font-semibold mb-3">Document Preview</h3>
-								<div class="card bg-base-100">
-									<div class="card-body p-0">
-										<!-- Preview Controls -->
-										<div class="flex items-center justify-between mb-4">
-											<button id="prevBtn" onclick="prevPage()" class="btn btn-outline btn-sm" disabled>
-												@ArrowLeftIcon("size-4")
-												Previous
-											</button>
-											<span id="pageInfo" class="text-sm font-medium">Page 1 of { fmt.Sprintf("%d", len(document.PreviewFilepaths)) }</span>
-											<button id="nextBtn" onclick="nextPage()" class="btn btn-outline btn-sm">
-												Next
-												@ArrowRightIcon("size-4")
-											</button>
-										</div>
-										<!-- Preview Image -->
-										<div class="flex justify-center bg-base-200 rounded-lg p-4">
-											<img
-												id="previewImage"
-												src={ templ.SafeURL(fmt.Sprintf("/archive/documents/%s/previews/0", document.ID)) }
-												alt="Document preview"
-												class="max-w-full h-auto rounded shadow-lg max-h-[80vh]"
-												data-doc-id={ document.ID }
-												data-total-pages={ fmt.Sprintf("%d", len(document.PreviewFilepaths)) }
-											/>
-										</div>
-									</div>
-								</div>
-							</div>
+							@documentPreview(document)
 						}
 					</div>
 				</div>
 			</div>
 		</div>
 	}
+}
+
+templ documentActions(document archive.Document) {
+	<div class="flex items-start justify-between mb-6">
+		<div class="flex items-center gap-4">
+			if document.IsTrashed() {
+				@TrashIcon("w-16 h-16 text-error")
+			} else {
+				@DocumentIcon("w-16 h-16 text-primary")
+			}
+			<div>
+				<h1 class="text-2xl font-bold">{ document.Name() }</h1>
+				<p class="text-base-content/70">{ document.Filename }</p>
+			</div>
+		</div>
+		<div class="flex gap-2">
+			<a href={ templ.SafeURL("/archive/documents/" + document.ID + "/download") } class="btn btn-primary">
+				@ArrowDownTrayIcon("size-5")
+				Download
+			</a>
+			if document.IsTrashed() {
+				<form method="POST" action={ "/archive/documents/" + document.ID + "/restore" } class="inline">
+					<button type="submit" class="btn btn-success">
+						@ArrowUpTrayIcon("size-5")
+						Restore
+					</button>
+				</form>
+			} else {
+				<form method="POST" action={ "/archive/documents/" + document.ID + "/delete" } class="inline" onsubmit="return confirm('Are you sure you want to trash this document?');">
+					<button type="submit" class="btn btn-error">
+						@TrashIcon("size-5")
+						Trash
+					</button>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+templ documentInformation(document archive.Document) {
+	<div class="flex flex-col max-h-[70vh] space-y-6">
+		<div class="flex-shrink-0">
+			<h3 class="text-lg font-semibold mb-3">Document Information</h3>
+			<div class="space-y-3">
+				<div class="flex justify-between">
+					<span class="font-medium">File Type:</span>
+					<span class="badge badge-outline">{ string(document.Filetype) }</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="font-medium">File Size:</span>
+					<span>{ formatFilesize(document.Filesize) }</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="font-medium">Created:</span>
+					<span>{ document.CreatedAt.Format("Jan 2, 2006 15:04") }</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="font-medium">Updated:</span>
+					<span>{ document.UpdatedAt.Format("Jan 2, 2006 15:04") }</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="font-medium">Owner:</span>
+					<span>{ document.Owner }</span>
+				</div>
+				if len(document.PreviewFilepaths) > 0 {
+					<div class="flex justify-between">
+						<span class="font-medium">Pages:</span>
+						<span>{ fmt.Sprintf("%d", len(document.PreviewFilepaths)) }</span>
+					</div>
+				}
+			</div>
+		</div>
+		if document.Text != "" {
+			<div class="flex flex-col min-h-0 flex-grow">
+				<h3 class="text-lg font-semibold mb-3 flex-shrink-0">Extracted Text Preview</h3>
+				<div class="bg-base-200 p-4 rounded-lg overflow-y-auto flex-grow">
+					<p class="text-sm whitespace-pre-wrap">{ document.Text }</p>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ documentPreview(document archive.Document) {
+	<div>
+		<h3 class="text-lg font-semibold mb-3">Document Preview</h3>
+		<div class="card bg-base-100">
+			<div class="card-body p-0">
+				<!-- Preview Controls -->
+				<div class="flex items-center justify-between mb-4">
+					<button id="prevBtn" class="btn btn-outline btn-sm" disabled>
+						@ArrowLeftIcon("size-4")
+						Previous
+					</button>
+					<span id="pageInfo" class="text-sm font-medium">Page 1 of { fmt.Sprintf("%d", len(document.PreviewFilepaths)) }</span>
+					<button id="nextBtn" class="btn btn-outline btn-sm">
+						Next
+						@ArrowRightIcon("size-4")
+					</button>
+				</div>
+				<!-- Preview Image -->
+				<div class="flex justify-center bg-base-200 rounded-lg p-4">
+					<img
+						id="previewImage"
+						src={ templ.SafeURL(fmt.Sprintf("/archive/documents/%s/previews/0", document.ID)) }
+						alt="Document preview"
+						class="max-w-full h-auto rounded shadow-lg max-h-[80vh]"
+						data-doc-id={ document.ID }
+						data-total-pages={ fmt.Sprintf("%d", len(document.PreviewFilepaths)) }
+					/>
+				</div>
+			</div>
+		</div>
+	</div>
 }
 
 func formatFilesize(size uint64) string {
