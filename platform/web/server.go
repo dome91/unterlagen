@@ -161,10 +161,19 @@ func (server *Server) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
 	folderID := "root"
 	folderIDs := r.URL.Query()["folderID"]
 	if len(folderIDs) > 0 {
 		folderID = folderIDs[0]
+	}
+
+	// Verify user owns the folder they're trying to access
+	_, err := server.archive.GetFolder(folderID, user)
+	if err != nil {
+		slog.Error("failed to get folder", slog.String("folderID", folderID), slog.String("user", user), slog.String("error", err.Error()))
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
 	}
 
 	// Check if we should show trashed documents
@@ -173,21 +182,21 @@ func (server *Server) getArchive(w http.ResponseWriter, r *http.Request) {
 		showTrashed = true
 	}
 
-	documents, err := server.archive.GetDocumentsInFolder(folderID)
+	documents, err := server.archive.GetDocumentsInFolder(folderID, user)
 	if err != nil {
 		slog.Error("failed to get documents in folder", slog.String("folderID", folderID), slog.String("error", err.Error()))
 		templates.ErrorServer("").Render(r.Context(), w)
 		return
 	}
 
-	folders, err := server.archive.GetFolderChildren(folderID)
+	folders, err := server.archive.GetFolderChildren(folderID, user)
 	if err != nil {
 		slog.Error("failed to get children of folder", slog.String("folderID", folderID), slog.String("error", err.Error()))
 		templates.ErrorServer("").Render(r.Context(), w)
 		return
 	}
 
-	hierarchy, err := server.archive.GetFolderHierarchy(folderID)
+	hierarchy, err := server.archive.GetFolderHierarchy(folderID, user)
 	if err != nil {
 		slog.Error("failed to get hierarchy of folder", slog.String("folderID", folderID), slog.String("error", err.Error()))
 		templates.ErrorServer("").Render(r.Context(), w)
@@ -213,7 +222,17 @@ func (server *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request)
 		parentFolderID = archive.FolderRootID
 	}
 
-	err := server.archive.CreateFolder(name, parentFolderID, username)
+	// Verify user owns the parent folder
+	_, err := server.archive.GetFolder(parentFolderID, username)
+	if err != nil {
+		slog.Error("failed to verify parent folder ownership", slog.String("error", err.Error()))
+		session.AddFlash("You don't have permission to create folders here", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, "/archive", http.StatusFound)
+		return
+	}
+
+	err = server.archive.CreateFolder(name, parentFolderID, username)
 	if err != nil {
 		slog.Error("failed to create folder", slog.String("error", err.Error()))
 		server.createGenericErrorNotification()
@@ -231,7 +250,17 @@ func (server *Server) handleUploadDocument(w http.ResponseWriter, r *http.Reques
 		folderID = archive.FolderRootID
 	}
 
-	err := r.ParseMultipartForm(32 << 20) // 32 MB max memory
+	// Verify user owns the target folder
+	_, err := server.archive.GetFolder(folderID, username)
+	if err != nil {
+		slog.Error("failed to verify folder ownership for upload", slog.String("error", err.Error()))
+		session.AddFlash("You don't have permission to upload to this folder", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, "/archive", http.StatusFound)
+		return
+	}
+
+	err = r.ParseMultipartForm(32 << 20) // 32 MB max memory
 	if err != nil {
 		session.AddFlash("Failed to parse uploaded files", "error")
 		session.Save(r, w)
