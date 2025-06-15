@@ -12,6 +12,26 @@ type DocumentRepository struct {
 	*sqlx.DB
 }
 
+// FindAllByOwner implements archive.DocumentRepository.
+func (d *DocumentRepository) FindAllByOwner(owner string) ([]archive.Document, error) {
+	var documents []archive.Document
+	err := d.Select(&documents, "SELECT * FROM documents WHERE owner = ?", owner)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load preview filepaths for each document
+	for i := range documents {
+		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		documents[i].PreviewFilepaths = previews
+	}
+
+	return documents, nil
+}
+
 // DeleteByID implements archive.DocumentRepository.
 func (d *DocumentRepository) DeleteByID(id string) error {
 	_, err := d.Exec("DELETE FROM documents WHERE id = ?", id)

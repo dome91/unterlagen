@@ -84,6 +84,7 @@ func (document Document) IsTrashed() bool {
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
+	FindAllByOwner(owner string) ([]Document, error)
 	FindAllByFolderID(folderID string) ([]Document, error)
 	FindAllTrashed() ([]Document, error)
 	DeleteByID(id string) error
@@ -254,6 +255,21 @@ func (d *documents) RestoreDocument(documentID string, owner string) error {
 
 	document.TrashedAt.Valid = false
 	return d.repository.Save(document)
+}
+
+func (d *documents) rescheduleAllDocumentTasks(owner string) error {
+	documents, err := d.repository.FindAllByOwner(owner)
+	if err != nil {
+		return err
+	}
+	for _, document := range documents {
+		err := d.scheduleDocumentProcessing(document)
+		if err != nil {
+			slog.Error("failed to schedule document for processing", "error", err.Error(), "documentID", document.ID)
+		}
+	}
+
+	return nil
 }
 
 func (d *documents) emptyTrash(ctx context.Context) {

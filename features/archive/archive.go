@@ -10,6 +10,10 @@ type Archive struct {
 	*folders
 }
 
+func (a *Archive) Synchronize(owner string) error {
+	return a.rescheduleAllDocumentTasks(owner)
+}
+
 func New(
 	documentRepository DocumentRepository,
 	documentStorage DocumentStorage,

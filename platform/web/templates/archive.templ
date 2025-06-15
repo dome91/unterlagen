@@ -10,6 +10,7 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 				<div class="flex gap-4">
 					@DocumentUploadButton(currentFolderID)
 					@CreateFolderButton()
+					@SynchronizeButton(currentFolderID)
 					@FilterDropdown(currentFolderID, showTrashed)
 				</div>
 			</div>
@@ -44,6 +45,19 @@ templ CreateFolderButton() {
 		@FolderPlusIcon("size-5")
 		<span class="hidden md:inline">New Folder</span>
 	</button>
+}
+
+templ SynchronizeButton(folderID string) {
+	<form action="/archive/synchronize" method="POST">
+		<input type="hidden" name="folderID" value={ folderID }/>
+		<button
+			type="submit"
+			class="btn btn-outline"
+		>
+			@ArrowPathIcon("size-5")
+			<span class="hidden md:inline">Synchronize</span>
+		</button>
+	</form>
 }
 
 templ FilterDropdown(folderID string, showTrashed bool) {
