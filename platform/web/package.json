@@ -5,12 +5,13 @@
   "license": "ISC",
   "description": "",
   "scripts": {
-    "build:css": "tailwindcss -i ./assets/unterlagen.css -o ./public/unterlagen.css --minify"
+    "build:css": "tailwindcss -i ./assets/unterlagen.css -o ./public/unterlagen.css --minify",
+    "build:js": "esbuild --bundle --minify --outdir=public assets/unterlagen.js"
   },
-  "dependencies": {},
   "devDependencies": {
     "@tailwindcss/cli": "4.1.2",
-    "tailwindcss": "4.1.2",
-    "daisyui": "5.0.12"
+    "daisyui": "5.0.12",
+    "esbuild": "0.25.5",
+    "tailwindcss": "4.1.2"
   }
 }
