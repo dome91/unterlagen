@@ -13,5 +13,8 @@
     "daisyui": "5.0.12",
     "esbuild": "0.25.5",
     "tailwindcss": "4.1.2"
+  },
+  "dependencies": {
+    "htmx.org": "^2.0.4"
   }
 }

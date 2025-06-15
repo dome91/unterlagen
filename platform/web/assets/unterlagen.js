@@ -1,1 +1,1 @@
-import "./document_preview.js";
+import "htmx.org";
