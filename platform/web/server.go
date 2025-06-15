@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"log/slog"
 	"net/http"
 	"runtime"
@@ -15,6 +16,7 @@ import (
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
 	"unterlagen/features/common"
+	"unterlagen/features/search"
 	"unterlagen/platform/configuration"
 	"unterlagen/platform/web/templates"
 
@@ -44,6 +46,7 @@ const startMessage = `
 type Server struct {
 	administration *administration.Administration
 	archive        *archive.Archive
+	search         *search.Search
 	sessionStore   sessions.Store
 	internal       *http.Server
 }
@@ -476,6 +479,37 @@ func (server *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
+func (server *Server) getSearch(w http.ResponseWriter, r *http.Request) {
+	notifications := server.buildNotifications(r, w)
+	isAdmin := server.isAdmin(r)
+
+	page := templates.PageSearch
+
+	// Start with empty results
+	var results []search.SearchResult
+
+	templates.Search(notifications, page, isAdmin, results).Render(r.Context(), w)
+}
+
+func (server *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	query := r.URL.Query().Get("q")
+
+	if query == "" {
+		templates.EmptySearchResults().Render(r.Context(), w)
+		return
+	}
+
+	results, err := server.search.SearchDocuments(query, user, 20)
+	if err != nil {
+		log.Printf("Search error: %v", err)
+		templates.EmptySearchResults().Render(r.Context(), w)
+		return
+	}
+
+	templates.SearchResults(results).Render(r.Context(), w)
+}
+
 func (server *Server) profile(w http.ResponseWriter, r *http.Request) {
 	username := server.getAuthenticatedUser(r)
 
@@ -750,6 +784,7 @@ func (server *Server) isAdmin(r *http.Request) bool {
 func NewServer(
 	administration *administration.Administration,
 	archive *archive.Archive,
+	search *search.Search,
 	shutdown *common.Shutdown,
 	configuration configuration.Configuration,
 ) *Server {
@@ -761,6 +796,7 @@ func NewServer(
 	server := &Server{
 		administration: administration,
 		archive:        archive,
+		search:         search,
 		sessionStore:   sessionStore,
 	}
 
@@ -790,6 +826,8 @@ func NewServer(
 			router.Get("/archive/documents/{id}/preview-component/{page}", server.getDocumentPreviewComponent)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
 			router.Post("/archive/documents/{id}/restore", server.handleRestoreDocument)
+			router.Get("/search", server.getSearch)
+			router.Get("/search/execute", server.handleSearch)
 
 			router.Group(func(router chi.Router) {
 				router.Use(server.requireAdmin)

@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"encoding/json"
 	"time"
 	"unterlagen/features/common"
 
@@ -17,22 +16,11 @@ func (r *TaskRepository) Save(task common.Task) error {
 		INSERT OR REPLACE INTO tasks (
 			id, type, status, payload, error, attempts, max_attempts,
 			next_run_at, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (:id, :type, :status, :payload, :error, :attempts, :max_attempts,
+			:next_run_at, :created_at, :updated_at)
 	`
 
-	_, err := r.Exec(query,
-		task.ID,
-		string(task.Type),
-		string(task.Status),
-		string(task.Payload),
-		task.Error,
-		task.Attempts,
-		task.MaxAttempts,
-		task.NextRunAt,
-		task.CreatedAt,
-		task.UpdatedAt,
-	)
-
+	_, err := r.NamedExec(query, task)
 	return err
 }
 
@@ -45,80 +33,37 @@ func (r *TaskRepository) FindByID(id string) (common.Task, error) {
 	`
 
 	var task common.Task
-	var taskType, status string
-	var payload string
-
-	err := r.QueryRow(query, id).Scan(
-		&task.ID,
-		&taskType,
-		&status,
-		&payload,
-		&task.Error,
-		&task.Attempts,
-		&task.MaxAttempts,
-		&task.NextRunAt,
-		&task.CreatedAt,
-		&task.UpdatedAt,
-	)
-
+	err := r.Get(&task, query, id)
 	if err != nil {
 		return common.Task{}, err
 	}
 
-	task.Type = common.TaskType(taskType)
-	task.Status = common.TaskStatus(status)
-	task.Payload = json.RawMessage(payload)
-
 	return task, nil
 }
 
-func (r *TaskRepository) FindPendingTasks(limit int) ([]common.Task, error) {
+func (r *TaskRepository) FindPendingTasksOfAnyType(limit int, types []common.TaskType) ([]common.Task, error) {
 	query := `
 		SELECT id, type, status, payload, error, attempts, max_attempts,
 			   next_run_at, created_at, updated_at
 		FROM tasks
-		WHERE status = ? AND next_run_at <= ?
+		WHERE status = ? AND next_run_at <= ? AND type IN (?)
 		ORDER BY created_at ASC
 		LIMIT ?
 	`
 
-	rows, err := r.Query(query, string(common.TaskStatusPending), time.Now(), limit)
+	var typesArg []string
+	for _, t := range types {
+		typesArg = append(typesArg, string(t))
+	}
+	query, args, err := sqlx.In(query, string(common.TaskStatusPending), time.Now(), typesArg, limit)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
+	query = r.Rebind(query)
 	var tasks []common.Task
-	for rows.Next() {
-		var task common.Task
-		var taskType, status string
-		var payload string
-
-		err := rows.Scan(
-			&task.ID,
-			&taskType,
-			&status,
-			&payload,
-			&task.Error,
-			&task.Attempts,
-			&task.MaxAttempts,
-			&task.NextRunAt,
-			&task.CreatedAt,
-			&task.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		task.Type = common.TaskType(taskType)
-		task.Status = common.TaskStatus(status)
-		task.Payload = json.RawMessage(payload)
-
-		tasks = append(tasks, task)
-	}
-
-	return tasks, rows.Err()
+	err = r.Select(&tasks, query, args...)
+	return tasks, err
 }
 
 func (r *TaskRepository) FindAll() ([]common.Task, error) {
@@ -129,50 +74,20 @@ func (r *TaskRepository) FindAll() ([]common.Task, error) {
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.Query(query)
+	var tasks []common.Task
+	err := r.Select(&tasks, query)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var tasks []common.Task
-	for rows.Next() {
-		var task common.Task
-		var taskType, status string
-		var payload string
-
-		err := rows.Scan(
-			&task.ID,
-			&taskType,
-			&status,
-			&payload,
-			&task.Error,
-			&task.Attempts,
-			&task.MaxAttempts,
-			&task.NextRunAt,
-			&task.CreatedAt,
-			&task.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		task.Type = common.TaskType(taskType)
-		task.Status = common.TaskStatus(status)
-		task.Payload = json.RawMessage(payload)
-
-		tasks = append(tasks, task)
-	}
-
-	return tasks, rows.Err()
+	return tasks, nil
 }
 
 func (r *TaskRepository) FindPaginated(limit, offset int) ([]common.Task, int, error) {
 	// Count total tasks
 	var total int
 	countQuery := `SELECT COUNT(*) FROM tasks`
-	err := r.QueryRow(countQuery).Scan(&total)
+	err := r.Get(&total, countQuery)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -186,43 +101,13 @@ func (r *TaskRepository) FindPaginated(limit, offset int) ([]common.Task, int, e
 		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.Query(query, limit, offset)
+	var tasks []common.Task
+	err = r.Select(&tasks, query, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
 
-	var tasks []common.Task
-	for rows.Next() {
-		var task common.Task
-		var taskType, status string
-		var payload string
-
-		err := rows.Scan(
-			&task.ID,
-			&taskType,
-			&status,
-			&payload,
-			&task.Error,
-			&task.Attempts,
-			&task.MaxAttempts,
-			&task.NextRunAt,
-			&task.CreatedAt,
-			&task.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, 0, err
-		}
-
-		task.Type = common.TaskType(taskType)
-		task.Status = common.TaskStatus(status)
-		task.Payload = json.RawMessage(payload)
-
-		tasks = append(tasks, task)
-	}
-
-	return tasks, total, rows.Err()
+	return tasks, total, nil
 }
 
 func (r *TaskRepository) DeleteByID(id string) error {

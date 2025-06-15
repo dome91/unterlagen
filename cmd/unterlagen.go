@@ -9,6 +9,7 @@ import (
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
 	"unterlagen/features/common"
+	"unterlagen/features/search"
 	"unterlagen/platform/configuration"
 	"unterlagen/platform/database/memory"
 	"unterlagen/platform/database/sqlite"
@@ -31,6 +32,7 @@ func main() {
 	folderRepository := sqlite.NewFolderRepository(db)
 	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
+	searchRepository := memory.NewSearchRepository()
 
 	// Messaging
 	userMessages := synchronous.NewUserMessages()
@@ -44,9 +46,10 @@ func main() {
 	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
+	search := search.New(searchRepository, documentMessages, taskScheduler)
 
 	// Web
-	server := web.NewServer(administration, archive, shutdown, configuration)
+	server := web.NewServer(administration, archive, search, shutdown, configuration)
 	server.Start()
 
 	stop := make(chan os.Signal, 1)

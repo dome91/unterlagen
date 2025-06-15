@@ -8,16 +8,16 @@ import (
 var _ archive.DocumentMessages = &DocumentMessages{}
 
 type DocumentMessages struct {
-	documentAnalyzedSubscribers []func(document archive.Document) error
-	documentUploadedSubscribers []func(document archive.Document) error
-	documentDeletedSubscribers  []func(document archive.Document) error
+	documentTextExtractedSubscribers []func(document archive.Document) error
+	documentUploadedSubscribers      []func(document archive.Document) error
+	documentDeletedSubscribers       []func(document archive.Document) error
 }
 
-func (d *DocumentMessages) PublishDocumentAnalyzed(document archive.Document) error {
-	for _, subscriber := range d.documentAnalyzedSubscribers {
+func (d *DocumentMessages) PublishDocumentTextExtracted(document archive.Document) error {
+	for _, subscriber := range d.documentTextExtractedSubscribers {
 		err := subscriber(document)
 		if err != nil {
-			slog.Error("failed to process document analyzed event", slog.String("error", err.Error()))
+			slog.Error("failed to process document text extracted event", slog.String("error", err.Error()))
 		}
 	}
 	return nil
@@ -43,8 +43,8 @@ func (d *DocumentMessages) PublishDocumentUploaded(document archive.Document) er
 	return nil
 }
 
-func (d *DocumentMessages) SubscribeDocumentAnalyzed(subscriber func(document archive.Document) error) error {
-	d.documentAnalyzedSubscribers = append(d.documentAnalyzedSubscribers, subscriber)
+func (d *DocumentMessages) SubscribeDocumentTextExtracted(subscriber func(document archive.Document) error) error {
+	d.documentTextExtractedSubscribers = append(d.documentTextExtractedSubscribers, subscriber)
 	return nil
 }
 
@@ -60,8 +60,8 @@ func (d *DocumentMessages) SubscribeDocumentUploaded(subscriber func(document ar
 
 func NewDocumentMessages() *DocumentMessages {
 	return &DocumentMessages{
-		documentAnalyzedSubscribers: []func(document archive.Document) error{},
-		documentUploadedSubscribers: []func(document archive.Document) error{},
-		documentDeletedSubscribers:  []func(document archive.Document) error{},
+		documentTextExtractedSubscribers: []func(document archive.Document) error{},
+		documentUploadedSubscribers:      []func(document archive.Document) error{},
+		documentDeletedSubscribers:       []func(document archive.Document) error{},
 	}
 }

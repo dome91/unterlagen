@@ -3,7 +3,6 @@ package archive
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"image/jpeg"
 	"io"
@@ -34,7 +33,14 @@ func (p *DocumentProcessor) ProcessTask(task common.Task) error {
 	case common.TaskTypeGeneratePreviews:
 		return p.processPreviewGeneration(task)
 	default:
-		return errors.New("unknown task type")
+		return nil
+	}
+}
+
+func (p *DocumentProcessor) ResponsibleFor() []common.TaskType {
+	return []common.TaskType{
+		common.TaskTypeExtractText,
+		common.TaskTypeGeneratePreviews,
 	}
 }
 
@@ -96,7 +102,7 @@ func (p *DocumentProcessor) processPreviewGeneration(task common.Task) error {
 
 	slog.Info("previews generated for document", "document_id", document.ID, "count", len(previewFilepaths))
 
-	return p.messages.PublishDocumentAnalyzed(document)
+	return p.messages.PublishDocumentTextExtracted(document)
 }
 
 func newDocumentProcessor(
