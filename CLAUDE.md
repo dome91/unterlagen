@@ -42,9 +42,10 @@ go generate ./...
 
 ### Frontend Assets
 ```bash
-# Build Tailwind CSS (from platform/web directory)
+# Build Tailwind CSS (from platform/web directory) and JavaScript
 cd platform/web
 npm run build:css
+npm run build:js
 ```
 
 ### Testing
@@ -68,6 +69,7 @@ Configuration uses Viper with environment variables prefixed with `UNTERLAGEN_`:
 ## Template System
 
 Uses templ for type-safe HTML templates. Run `templ generate` or `go generate ./...` to compile templates before building.
+Use HTMX for client-side and partial updates.
 
 ## Testing Strategy
 

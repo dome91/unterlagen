@@ -111,8 +111,8 @@ type DocumentAnalyzer interface {
 type DocumentMessages interface {
 	PublishDocumentUploaded(document Document) error
 	SubscribeDocumentUploaded(subscriber func(document Document) error) error
-	PublishDocumentAnalyzed(document Document) error
-	SubscribeDocumentAnalyzed(subscriber func(document Document) error) error
+	PublishDocumentTextExtracted(document Document) error
+	SubscribeDocumentTextExtracted(subscriber func(document Document) error) error
 	PublishDocumentDeleted(document Document) error
 	SubscribeDocumentDeleted(subscriber func(document Document) error) error
 }

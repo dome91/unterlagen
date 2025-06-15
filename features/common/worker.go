@@ -8,6 +8,7 @@ import (
 
 type TaskProcessor interface {
 	ProcessTask(task Task) error
+	ResponsibleFor() []TaskType
 }
 
 type Worker struct {
@@ -44,7 +45,7 @@ func (w *Worker) Start(ctx context.Context) {
 }
 
 func (w *Worker) processBatch(ctx context.Context) {
-	tasks, err := w.repository.FindPendingTasks(w.batchSize)
+	tasks, err := w.repository.FindPendingTasksOfAnyType(w.batchSize, w.processor.ResponsibleFor())
 	if err != nil {
 		slog.Error("failed to find pending tasks", "error", err)
 		return

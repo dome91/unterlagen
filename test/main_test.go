@@ -8,6 +8,7 @@ import (
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
 	"unterlagen/features/common"
+	"unterlagen/features/search"
 	"unterlagen/platform/configuration"
 	"unterlagen/platform/database/memory"
 	"unterlagen/platform/database/sqlite"
@@ -68,9 +69,10 @@ func NewTestEnvironment() *TestEnvironment {
 	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
+	searchService := search.NewSearchService(documentRepository)
 
 	// Web
-	server := web.NewServer(administration, archive, shutdown, configuration)
+	server := web.NewServer(administration, archive, searchService, shutdown, configuration)
 
 	return &TestEnvironment{
 		server:   server,

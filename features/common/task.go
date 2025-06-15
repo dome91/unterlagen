@@ -11,6 +11,7 @@ type TaskStatus string
 const (
 	TaskTypeExtractText      TaskType = "extract_text"
 	TaskTypeGeneratePreviews TaskType = "generate_previews"
+	TaskTypeIndexDocument    TaskType = "index_document"
 )
 
 const (
@@ -21,16 +22,16 @@ const (
 )
 
 type Task struct {
-	ID          string          `json:"id"`
-	Type        TaskType        `json:"type"`
-	Status      TaskStatus      `json:"status"`
-	Payload     json.RawMessage `json:"payload"`
-	Error       string          `json:"error,omitempty"`
-	Attempts    int             `json:"attempts"`
-	MaxAttempts int             `json:"max_attempts"`
-	NextRunAt   time.Time       `json:"next_run_at"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
+	ID          string          `json:"id" db:"id"`
+	Type        TaskType        `json:"type" db:"type"`
+	Status      TaskStatus      `json:"status" db:"status"`
+	Payload     json.RawMessage `json:"payload" db:"payload"`
+	Error       string          `json:"error,omitempty" db:"error"`
+	Attempts    int             `json:"attempts" db:"attempts"`
+	MaxAttempts int             `json:"max_attempts" db:"max_attempts"`
+	NextRunAt   time.Time       `json:"next_run_at" db:"next_run_at"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 func NewTask(taskType TaskType, payload any, maxAttempts int) (Task, error) {
@@ -87,7 +88,7 @@ func (t *Task) ShouldRun() bool {
 type TaskRepository interface {
 	Save(task Task) error
 	FindByID(id string) (Task, error)
-	FindPendingTasks(limit int) ([]Task, error)
+	FindPendingTasksOfAnyType(limit int, types []TaskType) ([]Task, error)
 	FindAll() ([]Task, error)
 	FindPaginated(limit, offset int) ([]Task, int, error)
 	DeleteByID(id string) error

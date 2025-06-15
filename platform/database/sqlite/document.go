@@ -113,8 +113,8 @@ func (d *DocumentRepository) Save(document archive.Document) error {
 
 func (d *DocumentRepository) loadPreviewFilepaths(documentID string) ([]string, error) {
 	rows, err := d.Query(`
-		SELECT filepath FROM documents_previews 
-		WHERE document_id = ? 
+		SELECT filepath FROM documents_previews
+		WHERE document_id = ?
 		ORDER BY page_number ASC
 	`, documentID)
 	if err != nil {

@@ -1,0 +1,67 @@
+package templates
+
+import (
+	"fmt"
+	"unterlagen/features/search"
+)
+
+templ Search(notifications []Notification, page Page, isAdmin bool, results []search.SearchResult) {
+	@authenticatedLayout(notifications, page, isAdmin) {
+		<div class="container mx-auto my-8">
+			<div class="form-control flex justify-center">
+				<div class="input-group">
+					<input
+						type="text"
+						placeholder="Search documents..."
+						class="input input-bordered w-96"
+						id="search-input"
+						hx-get="/search/execute"
+						hx-trigger="input changed delay:300ms"
+						hx-target="#search-results"
+						hx-params="q"
+						name="q"
+						autocomplete="off"
+						hx-indicator="#search-spinner"
+					/>
+				</div>
+			</div>
+			<div id="search-results">
+				@SearchResults(results)
+			</div>
+		</div>
+	}
+}
+
+templ SearchResults(results []search.SearchResult) {
+	if len(results) > 0 {
+		<div class="bg-base-100 rounded-box shadow-lg max-h-96 overflow-y-auto mt-2 divide-y divide-base-200">
+			for _, result := range results {
+				<a href={ templ.URL("/archive/documents/" + result.DocumentID) } class="flex items-start gap-3 p-4 hover:bg-base-200 transition-colors duration-200 block">
+					<div class="flex-shrink-0 mt-1">
+						@DocumentIcon("size-5 text-primary")
+					</div>
+					<div class="flex flex-col items-start min-w-0 flex-1 gap-1">
+						<h3 class="font-medium text-base-content truncate max-w-full">{ result.Name }</h3>
+						if result.Snippet != "" {
+							<p class="text-sm text-base-content/70 leading-relaxed">
+								{ result.Snippet }
+							</p>
+						}
+						if result.Rank > 0 {
+							<span class="text-xs text-primary font-medium">Score: { fmt.Sprintf("%.1f", result.Rank) }</span>
+						}
+					</div>
+				</a>
+			}
+		</div>
+	} else {
+		<div class="text-center text-base-content/70 py-4">
+			@MagnifyingGlassIcon("size-8 mx-auto mb-2")
+			<p>No documents found</p>
+		</div>
+	}
+}
+
+templ EmptySearchResults() {
+	<div class="hidden"></div>
+}
