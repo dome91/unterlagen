@@ -10,6 +10,10 @@ type Archive struct {
 	*folders
 }
 
+func (a *Archive) Synchronize(owner string) error {
+	return a.rescheduleAllDocumentTasks(owner)
+}
+
 func New(
 	documentRepository DocumentRepository,
 	documentStorage DocumentStorage,
@@ -19,6 +23,7 @@ func New(
 	userMessages administration.UserMessages,
 	jobScheduler *common.JobScheduler,
 	taskScheduler *common.TaskScheduler,
+	shutdown *common.Shutdown,
 ) *Archive {
 	return &Archive{
 		documents: newDocuments(
@@ -28,6 +33,7 @@ func New(
 			documentMessages,
 			jobScheduler,
 			taskScheduler,
+			shutdown,
 		),
 		folders: newFolders(
 			folderRepository,

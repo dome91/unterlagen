@@ -124,7 +124,7 @@ func NewAssistant(
 		chunker:        chunker,
 	}
 
-	documentMessages.SubscribeDocumentAnalyzed(assistant.generateNodes)
+	documentMessages.SubscribeDocumentTextExtracted(assistant.generateNodes)
 	documentMessages.SubscribeDocumentDeleted(assistant.deleteNodes)
 
 	return assistant

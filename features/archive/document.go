@@ -77,9 +77,14 @@ func (document Document) ShouldBeDeleted() bool {
 	return time.Since(document.TrashedAt.Time) >= ThirtyDays
 }
 
+func (document Document) IsTrashed() bool {
+	return document.TrashedAt.Valid
+}
+
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
+	FindAllByOwner(owner string) ([]Document, error)
 	FindAllByFolderID(folderID string) ([]Document, error)
 	FindAllTrashed() ([]Document, error)
 	DeleteByID(id string) error
@@ -107,8 +112,8 @@ type DocumentAnalyzer interface {
 type DocumentMessages interface {
 	PublishDocumentUploaded(document Document) error
 	SubscribeDocumentUploaded(subscriber func(document Document) error) error
-	PublishDocumentAnalyzed(document Document) error
-	SubscribeDocumentAnalyzed(subscriber func(document Document) error) error
+	PublishDocumentTextExtracted(document Document) error
+	SubscribeDocumentTextExtracted(subscriber func(document Document) error) error
 	PublishDocumentDeleted(document Document) error
 	SubscribeDocumentDeleted(subscriber func(document Document) error) error
 }
@@ -118,7 +123,6 @@ type documents struct {
 	storage        DocumentStorage
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
-	analyzers      map[Filetype]DocumentAnalyzer
 	taskScheduler  *common.TaskScheduler
 }
 
@@ -167,8 +171,21 @@ func (d *documents) determineFiletype(r io.Reader) (Filetype, error) {
 	return "", ErrUnsupportedFiletype
 }
 
-func (d *documents) GetDocumentsInFolder(folderID string) ([]Document, error) {
-	return d.repository.FindAllByFolderID(folderID)
+func (d *documents) GetDocumentsInFolder(folderID string, owner string) ([]Document, error) {
+	documents, err := d.repository.FindAllByFolderID(folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter documents to only those owned by the user
+	var userDocuments []Document
+	for _, document := range documents {
+		if document.Owner == owner {
+			userDocuments = append(userDocuments, document)
+		}
+	}
+
+	return userDocuments, nil
 }
 
 func (d *documents) GetDocument(id string, owner string) (Document, error) {
@@ -188,6 +205,10 @@ func (d *documents) GetDocumentPreview(id string, owner string, pageNumber int, 
 	document, err := d.repository.FindByID(id)
 	if err != nil {
 		return err
+	}
+
+	if document.Owner != owner {
+		return ErrNotAllowed
 	}
 
 	previewFilepath := document.PreviewFilepaths[pageNumber]
@@ -220,6 +241,35 @@ func (d *documents) TrashDocument(documentID string, owner string) error {
 	document.TrashedAt.Valid = true
 	document.TrashedAt.Time = time.Now()
 	return d.repository.Save(document)
+}
+
+func (d *documents) RestoreDocument(documentID string, owner string) error {
+	document, err := d.repository.FindByID(documentID)
+	if err != nil {
+		return err
+	}
+
+	if document.Owner != owner {
+		return errors.New("unauthorized")
+	}
+
+	document.TrashedAt.Valid = false
+	return d.repository.Save(document)
+}
+
+func (d *documents) rescheduleAllDocumentTasks(owner string) error {
+	documents, err := d.repository.FindAllByOwner(owner)
+	if err != nil {
+		return err
+	}
+	for _, document := range documents {
+		err := d.scheduleDocumentProcessing(document)
+		if err != nil {
+			slog.Error("failed to schedule document for processing", "error", err.Error(), "documentID", document.ID)
+		}
+	}
+
+	return nil
 }
 
 func (d *documents) emptyTrash(ctx context.Context) {
@@ -290,23 +340,25 @@ type DocumentProcessingPayload struct {
 	DocumentID string `json:"document_id"`
 }
 
-func newDocuments(repository DocumentRepository, storage DocumentStorage, previewStorage DocumentPreviewStorage, messages DocumentMessages, jobScheduler *common.JobScheduler, taskScheduler *common.TaskScheduler) *documents {
-	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage)
-	analyzers := make(map[Filetype]DocumentAnalyzer)
-	analyzers[PDF] = pdfAnalyzer
-
-	asyncProcessor := NewAsyncDocumentProcessor(repository, storage, previewStorage, messages)
+func newDocuments(
+	repository DocumentRepository,
+	storage DocumentStorage,
+	previewStorage DocumentPreviewStorage,
+	messages DocumentMessages,
+	jobScheduler *common.JobScheduler,
+	taskScheduler *common.TaskScheduler,
+	shutdown *common.Shutdown) *documents {
 
 	documents := &documents{
 		repository:     repository,
 		storage:        storage,
 		previewStorage: previewStorage,
 		messages:       messages,
-		analyzers:      analyzers,
 		taskScheduler:  taskScheduler,
 	}
 
+	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, shutdown)
 	jobScheduler.Schedule(documents.emptyTrash)
-	taskScheduler.RegisterWorker(asyncProcessor)
+	taskScheduler.RegisterWorker(documentProcessor)
 	return documents
 }

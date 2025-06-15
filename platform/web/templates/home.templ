@@ -1,7 +1,7 @@
 package templates
 
-templ Home(notifications []Notification) {
-	@authenticatedLayout(notifications, PageHome) {
+templ Home(notifications []Notification, isAdmin bool) {
+	@authenticatedLayout(notifications, PageHome, isAdmin) {
 		<div class="flex items-center justify-center min-h-screen">
 			<h1 class="text-3xl font-bold text-center">Welcome to Unterlagen</h1>
 		</div>

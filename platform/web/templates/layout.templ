@@ -5,6 +5,7 @@ type Page string
 const (
 	PageHome    Page = "home"
 	PageArchive Page = "archive"
+	PageSearch  Page = "search"
 	PageAdmin   Page = "admin"
 	PageError   Page = "error"
 )
@@ -16,8 +17,8 @@ templ baseLayout(notifications []Notification) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Unterlagen</title>
-			<script defer src="/public/unterlagen.js"></script>
 			<link rel="stylesheet" href="/public/unterlagen.css"/>
+			<script defer src="/public/unterlagen.js"></script>
 		</head>
 		<body x-data>
 			@notificationContainer(notifications)
@@ -26,10 +27,10 @@ templ baseLayout(notifications []Notification) {
 	</html>
 }
 
-templ authenticatedLayout(notifications []Notification, page Page) {
+templ authenticatedLayout(notifications []Notification, page Page, isAdmin bool) {
 	@baseLayout(notifications) {
 		<div class="min-h-screen">
-			@Navbar(page)
+			@Navbar(page, isAdmin)
 			<main class="overflow-auto">
 				{ children... }
 			</main>
@@ -46,7 +47,7 @@ templ unauthenticatedLayout(notifications []Notification) {
 	}
 }
 
-templ Navbar(page Page) {
+templ Navbar(page Page, isAdmin bool) {
 	<div class="navbar shadow-sm max-sm:hidden">
 		<div class="navbar-start">
 			<a class="btn btn-ghost text-xl" href="/">Unterlagen</a>
@@ -60,11 +61,19 @@ templ Navbar(page Page) {
 					</a>
 				</li>
 				<li>
-					<a class={ templ.KV("menu-active", page == PageAdmin) } href="/admin">
-						@AdminIcon("size-6")
-						Administration
+					<a class={ templ.KV("menu-active", page == PageSearch) } href="/search">
+						@MagnifyingGlassIcon("size-6")
+						Search
 					</a>
 				</li>
+				if isAdmin {
+					<li>
+						<a class={ templ.KV("menu-active", page == PageAdmin) } href="/admin">
+							@AdminIcon("size-6")
+							Administration
+						</a>
+					</li>
+				}
 			</ul>
 		</div>
 		<div class="navbar-end">

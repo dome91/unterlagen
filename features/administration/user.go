@@ -41,7 +41,7 @@ type UserRepository interface {
 
 type users struct {
 	repository UserRepository
-	events     UserMessages
+	messages   UserMessages
 }
 
 func (users *users) CreateUser(username string, password string, role UserRole) error {
@@ -62,7 +62,7 @@ func (users *users) CreateUser(username string, password string, role UserRole) 
 		return err
 	}
 
-	return users.events.PublishUserCreated(user)
+	return users.messages.PublishUserCreated(user)
 }
 
 func (users *users) AdminExists() bool {
@@ -84,6 +84,6 @@ func (users *users) GetAllUsersByRole(role UserRole) ([]User, error) {
 func newUsers(repository UserRepository, messages UserMessages) *users {
 	return &users{
 		repository: repository,
-		events:     messages,
+		messages:   messages,
 	}
 }
