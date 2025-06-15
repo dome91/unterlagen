@@ -170,8 +170,21 @@ func (d *documents) determineFiletype(r io.Reader) (Filetype, error) {
 	return "", ErrUnsupportedFiletype
 }
 
-func (d *documents) GetDocumentsInFolder(folderID string) ([]Document, error) {
-	return d.repository.FindAllByFolderID(folderID)
+func (d *documents) GetDocumentsInFolder(folderID string, owner string) ([]Document, error) {
+	documents, err := d.repository.FindAllByFolderID(folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter documents to only those owned by the user
+	var userDocuments []Document
+	for _, document := range documents {
+		if document.Owner == owner {
+			userDocuments = append(userDocuments, document)
+		}
+	}
+
+	return userDocuments, nil
 }
 
 func (d *documents) GetDocument(id string, owner string) (Document, error) {
@@ -191,6 +204,10 @@ func (d *documents) GetDocumentPreview(id string, owner string, pageNumber int, 
 	document, err := d.repository.FindByID(id)
 	if err != nil {
 		return err
+	}
+
+	if document.Owner != owner {
+		return ErrNotAllowed
 	}
 
 	previewFilepath := document.PreviewFilepaths[pageNumber]
