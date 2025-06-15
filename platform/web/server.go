@@ -245,6 +245,29 @@ func (server *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, fmt.Sprintf("/archive?folderID=%s", parentFolderID), http.StatusFound)
 }
 
+func (server *Server) handleSynchronize(w http.ResponseWriter, r *http.Request) {
+	session := server.getSession(r)
+	folderID := r.PostFormValue("folderID")
+	if folderID == "" {
+		folderID = archive.FolderRootID
+	}
+
+	userID := server.getAuthenticatedUser(r)
+	err := server.archive.Synchronize(userID)
+	if err != nil {
+		slog.Error("failed to synchronize archive", slog.String("error", err.Error()))
+		server.createGenericErrorNotification()
+		return
+	}
+
+	// Add success notification that synchronization was started
+	session.AddFlash("Archive synchronization started", "success")
+	session.Save(r, w)
+
+	// Redirect back to the archive page with the current folder
+	http.Redirect(w, r, fmt.Sprintf("/archive?folderID=%s", folderID), http.StatusFound)
+}
+
 func (server *Server) handleUploadDocument(w http.ResponseWriter, r *http.Request) {
 	session := server.getSession(r)
 	username := server.getAuthenticatedUser(r)
@@ -819,6 +842,7 @@ func NewServer(
 			router.Post("/logout", server.handleLogout)
 			router.Get("/archive", server.getArchive)
 			router.Post("/archive/folders", server.handleCreateFolder)
+			router.Post("/archive/synchronize", server.handleSynchronize)
 			router.Post("/archive/documents", server.handleUploadDocument)
 			router.Get("/archive/documents/{id}", server.getDocumentDetails)
 			router.Get("/archive/documents/{id}/download", server.downloadDocument)

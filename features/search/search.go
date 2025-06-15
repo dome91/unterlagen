@@ -33,7 +33,7 @@ func (s *Search) SearchDocuments(query string, owner string, limit int) ([]Searc
 
 	// Limit results to prevent excessive load
 	if limit <= 0 || limit > 50 {
-		limit = 20
+		limit = 50
 	}
 
 	results, err := s.repository.SearchDocuments(query, owner, limit)
@@ -41,10 +41,10 @@ func (s *Search) SearchDocuments(query string, owner string, limit int) ([]Searc
 		return nil, err
 	}
 
-	slices.SortFunc(results, func(a, b SearchResult) int {
-		if a.Rank > b.Rank {
+	slices.SortFunc(results, func(r1, r2 SearchResult) int {
+		if r1.Rank > r2.Rank {
 			return -1
-		} else if a.Rank < b.Rank {
+		} else if r1.Rank < r2.Rank {
 			return 1
 		}
 		return 0
@@ -63,7 +63,6 @@ func (s *Search) ProcessTask(task common.Task) error {
 		return s.repository.IndexDocument(document)
 	default:
 		return nil
-
 	}
 }
 

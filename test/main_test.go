@@ -56,8 +56,9 @@ func NewTestEnvironment() *TestEnvironment {
 	folderRepository := sqlite.NewFolderRepository(db)
 	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
+	searchRepository := memory.NewSearchRepository()
 
-	// Event
+	// Messaging
 	userMessages := synchronous.NewUserMessages()
 	documentMessages := synchronous.NewDocumentMessages()
 
@@ -69,10 +70,10 @@ func NewTestEnvironment() *TestEnvironment {
 	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
-	searchService := search.NewSearchService(documentRepository)
+	search := search.New(searchRepository, documentMessages, taskScheduler)
 
 	// Web
-	server := web.NewServer(administration, archive, searchService, shutdown, configuration)
+	server := web.NewServer(administration, archive, search, shutdown, configuration)
 
 	return &TestEnvironment{
 		server:   server,
