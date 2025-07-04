@@ -509,7 +509,7 @@ func (server *Server) getSearch(w http.ResponseWriter, r *http.Request) {
 	page := templates.PageSearch
 
 	// Start with empty results
-	var results []search.SearchResult
+	var results []archive.Document
 
 	templates.Search(notifications, page, isAdmin, results).Render(r.Context(), w)
 }
@@ -523,14 +523,25 @@ func (server *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := server.search.SearchDocuments(query, user, 20)
+	hits, err := server.search.SearchDocuments(query, user, 20)
 	if err != nil {
-		log.Printf("Search error: %v", err)
 		templates.EmptySearchResults().Render(r.Context(), w)
 		return
 	}
 
-	templates.SearchResults(results).Render(r.Context(), w)
+	var documentIDs []string
+	for _, hit := range hits {
+		documentIDs = append(documentIDs, hit.DocumentID)
+	}
+
+	documents, err := server.archive.GetDocuments(documentIDs, user)
+	if err != nil {
+		log.Printf("Error getting documents: %v", err)
+		templates.EmptySearchResults().Render(r.Context(), w)
+		return
+	}
+
+	templates.SearchResults(documents).Render(r.Context(), w)
 }
 
 func (server *Server) profile(w http.ResponseWriter, r *http.Request) {

@@ -84,6 +84,7 @@ func (document Document) IsTrashed() bool {
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
+	FindAllByIDIn(ids []string) ([]Document, error)
 	FindAllByOwner(owner string) ([]Document, error)
 	FindAllByFolderID(folderID string) ([]Document, error)
 	FindAllTrashed() ([]Document, error)
@@ -199,6 +200,21 @@ func (d *documents) GetDocument(id string, owner string) (Document, error) {
 	}
 
 	return document, nil
+}
+
+func (d *documents) GetDocuments(ids []string, owner string) ([]Document, error) {
+	documents, err := d.repository.FindAllByIDIn(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, document := range documents {
+		if document.Owner != owner {
+			return nil, ErrNotAllowed
+		}
+	}
+
+	return documents, nil
 }
 
 func (d *documents) GetDocumentPreview(id string, owner string, pageNumber int, consumer func(r io.Reader) error) error {
@@ -359,6 +375,6 @@ func newDocuments(
 
 	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, shutdown)
 	jobScheduler.Schedule(documents.emptyTrash)
-	taskScheduler.RegisterWorker(documentProcessor)
+	taskScheduler.Register(documentProcessor)
 	return documents
 }

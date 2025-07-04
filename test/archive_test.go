@@ -155,3 +155,106 @@ func TestFileUploadInFolder(t *testing.T) {
 
 	t.Logf("Successfully uploaded file to folder: Test Folder")
 }
+
+func TestArchiveDocumentUploadAndViewDocumentInformation(t *testing.T) {
+	env := NewTestEnvironment()
+	go env.StartServer()
+	defer env.StopServer()
+
+	page := setupAndLogin(t)
+	defer page.Close()
+
+	// Navigate to archive page
+	_, err := page.Goto("http://localhost:8080/archive")
+	require.Nil(t, err)
+
+	// Verify we're on the archive page
+	archiveHeading := page.GetByText("Archive")
+	isVisible, err := archiveHeading.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible)
+
+	// Test file upload
+	testPDFPath := filepath.Join("../testdata/mock_pdfs/invoice_0001.pdf")
+	testPDFAbsPath, err := filepath.Abs(testPDFPath)
+	require.Nil(t, err)
+
+	// Verify test file exists
+	_, err = os.Stat(testPDFAbsPath)
+	require.Nil(t, err, "Test PDF file should exist at %s", testPDFAbsPath)
+
+	// Find the file input and upload the file
+	fileInput := page.Locator("input[name='documents'][type='file']")
+	err = fileInput.SetInputFiles(testPDFAbsPath)
+	require.Nil(t, err)
+
+	// Wait for the page to reload after upload (form auto-submits)
+	err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
+		State: playwright.LoadStateNetworkidle,
+	})
+	require.Nil(t, err)
+
+	// Wait 5 seconds for processing as requested
+	page.WaitForTimeout(5000)
+
+	// Verify the uploaded file appears in the document list
+	uploadedDocumentTitle := page.GetByText("invoice_0001")
+	isVisible, err = uploadedDocumentTitle.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Uploaded document should be visible in the archive")
+
+	// Click on the document to view details
+	err = uploadedDocumentTitle.Click()
+	require.Nil(t, err)
+
+	// Verify we can see document information
+	// Check for document title
+	documentTitles, err := page.GetByText("invoice_0001").All()
+	require.Nil(t, err)
+	require.Len(t, documentTitles, 2)
+	isVisible, err = documentTitles[0].IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Document title should be visible")
+
+	// Check for file size information
+	fileSizeText := page.GetByText("KB")
+	isVisible, err = fileSizeText.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "File size should be visible")
+
+	// Check for download link
+	downloadLink := page.GetByRole("link", playwright.PageGetByRoleOptions{
+		Name: "Download",
+	})
+	isVisible, err = downloadLink.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Download link should be visible")
+
+	// Check for creation date
+	createdText := page.GetByText("Created")
+	isVisible, err = createdText.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Creation date should be visible")
+
+	// Check if PDF text was extracted
+	extractedText := page.GetByText("INVOICE #0001")
+	isVisible, err = extractedText.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Extracted text section should be visible")
+
+	// Check if preview image is showing
+	previewImage := page.Locator("img").Filter(playwright.LocatorFilterOptions{
+		HasText: "",
+	}).First()
+	isVisible, err = previewImage.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Preview image should be visible")
+
+	// Alternative check for preview image using more specific selector
+	documentPreview := page.Locator("img[alt*='preview'], img[src*='preview']")
+	count, err := documentPreview.Count()
+	require.Nil(t, err)
+	require.Greater(t, count, 0, "At least one preview image should be present")
+
+	t.Logf("Successfully uploaded file, waited 5 seconds, and verified document information, text extraction, and preview image display")
+}

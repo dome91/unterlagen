@@ -98,7 +98,7 @@ func Initialize(shutdown *common.Shutdown, jobScheduler *common.JobScheduler, co
 	})
 
 	db.MapperFunc(func(s string) string {
-		pattern := regexp.MustCompile("(\\p{Lu}+\\P{Lu}*)")
+		pattern := regexp.MustCompile(`(\p{Lu}+\P{Lu}*)`)
 		s2 := pattern.ReplaceAllString(s, "${1}_")
 		s2, _ = strings.CutSuffix(strings.ToLower(s2), "_")
 		return s2

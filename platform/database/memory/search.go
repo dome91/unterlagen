@@ -46,12 +46,9 @@ func (s *SearchRepository) SearchDocuments(query string, owner string, limit int
 			}
 
 			// Generate snippet from text content
-			snippet := generateSnippet(entry.Text, query, 150)
-
 			results = append(results, search.SearchResult{
 				DocumentID: entry.DocumentID,
 				Name:       entry.Name,
-				Snippet:    snippet,
 				Rank:       rank,
 			})
 		}

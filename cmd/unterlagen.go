@@ -11,6 +11,7 @@ import (
 	"unterlagen/features/common"
 	"unterlagen/features/search"
 	"unterlagen/platform/configuration"
+	"unterlagen/platform/database/bleve"
 	"unterlagen/platform/database/memory"
 	"unterlagen/platform/database/sqlite"
 	"unterlagen/platform/messaging/synchronous"
@@ -32,7 +33,8 @@ func main() {
 	folderRepository := sqlite.NewFolderRepository(db)
 	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
-	searchRepository := memory.NewSearchRepository()
+	index := bleve.Initialize(&configuration, shutdown)
+	searchRepository := bleve.NewSearchRepository(index)
 
 	// Messaging
 	userMessages := synchronous.NewUserMessages()
@@ -43,7 +45,7 @@ func main() {
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
 	// Features
-	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
+	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository, common.TaskSchedulerModeSynchronous)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
 	search := search.New(searchRepository, documentMessages, taskScheduler)
