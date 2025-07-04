@@ -40,7 +40,7 @@ func (t *TestEnvironment) StopServer() {
 
 func NewTestEnvironment() *TestEnvironment {
 	// General configuration
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 
 	// Common functionality
 	shutdown := common.NewShutdown()
@@ -67,7 +67,7 @@ func NewTestEnvironment() *TestEnvironment {
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
 	// Features
-	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository)
+	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository, common.TaskSchedulerModeSynchronous)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
 	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
 	search := search.New(searchRepository, documentMessages, taskScheduler)
@@ -97,8 +97,8 @@ func TestMain(m *testing.M) {
 	}
 	defer pw.Stop()
 	browser, err = pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(true),
-		//SlowMo:   playwright.Float(500),
+		Headless: playwright.Bool(false),
+		SlowMo:   playwright.Float(0),
 	})
 	if err != nil {
 		panic(err)

@@ -18,7 +18,7 @@ import (
 	"github.com/klippa-app/go-pdfium/webassembly"
 )
 
-type DocumentProcessor struct {
+type DocumentTaskProcessor struct {
 	repository     DocumentRepository
 	storage        DocumentStorage
 	previewStorage DocumentPreviewStorage
@@ -26,7 +26,11 @@ type DocumentProcessor struct {
 	analyzers      map[Filetype]DocumentAnalyzer
 }
 
-func (p *DocumentProcessor) ProcessTask(task common.Task) error {
+func (p *DocumentTaskProcessor) Name() string {
+	return "DocumentTaskProcessor"
+}
+
+func (p *DocumentTaskProcessor) ProcessTask(task common.Task) error {
 	switch task.Type {
 	case common.TaskTypeExtractText:
 		return p.processTextExtraction(task)
@@ -37,14 +41,14 @@ func (p *DocumentProcessor) ProcessTask(task common.Task) error {
 	}
 }
 
-func (p *DocumentProcessor) ResponsibleFor() []common.TaskType {
+func (p *DocumentTaskProcessor) ResponsibleFor() []common.TaskType {
 	return []common.TaskType{
 		common.TaskTypeExtractText,
 		common.TaskTypeGeneratePreviews,
 	}
 }
 
-func (p *DocumentProcessor) processTextExtraction(task common.Task) error {
+func (p *DocumentTaskProcessor) processTextExtraction(task common.Task) error {
 	var payload DocumentProcessingPayload
 	if err := json.Unmarshal(task.Payload, &payload); err != nil {
 		return err
@@ -74,7 +78,7 @@ func (p *DocumentProcessor) processTextExtraction(task common.Task) error {
 	return nil
 }
 
-func (p *DocumentProcessor) processPreviewGeneration(task common.Task) error {
+func (p *DocumentTaskProcessor) processPreviewGeneration(task common.Task) error {
 	var payload DocumentProcessingPayload
 	if err := json.Unmarshal(task.Payload, &payload); err != nil {
 		return err
@@ -111,12 +115,12 @@ func newDocumentProcessor(
 	previewStorage DocumentPreviewStorage,
 	messages DocumentMessages,
 	shutdown *common.Shutdown,
-) *DocumentProcessor {
+) *DocumentTaskProcessor {
 	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage, shutdown)
 	analyzers := make(map[Filetype]DocumentAnalyzer)
 	analyzers[PDF] = pdfAnalyzer
 
-	return &DocumentProcessor{
+	return &DocumentTaskProcessor{
 		repository:     repository,
 		storage:        storage,
 		previewStorage: previewStorage,

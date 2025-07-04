@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"strings"
 	"unterlagen/features/archive"
 
 	"github.com/jmoiron/sqlx"
@@ -10,6 +11,44 @@ var _ archive.DocumentRepository = &DocumentRepository{}
 
 type DocumentRepository struct {
 	*sqlx.DB
+}
+
+// FindAllByIDIn implements archive.DocumentRepository.
+func (d *DocumentRepository) FindAllByIDIn(ids []string) ([]archive.Document, error) {
+	var query string
+	var args []any
+
+	if len(ids) == 0 {
+		return []archive.Document{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = "?"
+		args = append(args, ids[i])
+	}
+
+	// Build the query with the IN clause
+	query = "SELECT * FROM documents WHERE id IN (?" + strings.Repeat(",?", len(ids)-1) + ")"
+
+	// Execute the query
+	var documents []archive.Document
+	err := d.Select(&documents, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load preview filepaths for each document
+	for i := range documents {
+		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		documents[i].PreviewFilepaths = previews
+	}
+
+	return documents, nil
 }
 
 // FindAllByOwner implements archive.DocumentRepository.
