@@ -96,10 +96,19 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	defer pw.Stop()
-	browser, err = pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+	// Configure browser launch options based on GITHUB_ACTIONS environment variable
+	launchOptions := playwright.BrowserTypeLaunchOptions{
 		Headless: playwright.Bool(false),
-		SlowMo:   playwright.Float(0),
-	})
+		SlowMo:   playwright.Float(500),
+	}
+
+	// If running in GitHub Actions, use headless mode with no slowdown
+	if os.Getenv("GITHUB_ACTIONS") != "" {
+		launchOptions.Headless = playwright.Bool(true)
+		launchOptions.SlowMo = playwright.Float(0)
+	}
+
+	browser, err = pw.Chromium.Launch(launchOptions)
 	if err != nil {
 		panic(err)
 	}
