@@ -145,9 +145,10 @@ func (d *DocumentRepository) Save(document archive.Document) error {
 
 	// Save document
 	_, err = tx.NamedExec(`
-		INSERT INTO documents (id, filename, filetype, filesize, text, folder_id, owner, created_at, updated_at, trashed_at)
-		VALUES (:id, :filename, :filetype, :filesize, :text, :folder_id, :owner, :created_at, :updated_at, :trashed_at)
+		INSERT INTO documents (id, title, filename, filetype, filesize, text, folder_id, owner, created_at, updated_at, trashed_at)
+		VALUES (:id, :title, :filename, :filetype, :filesize, :text, :folder_id, :owner, :created_at, :updated_at, :trashed_at)
 		ON CONFLICT(id) DO UPDATE SET
+			title = :title,
 			filename = :filename,
 			filetype = :filetype,
 			filesize = :filesize,

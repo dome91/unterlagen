@@ -52,9 +52,67 @@ func TestFileUploadAndDownload(t *testing.T) {
 	isVisible, err = uploadedDocumentTitle.IsVisible()
 	require.Nil(t, err)
 	require.True(t, isVisible, "Uploaded document should be visible in the archive")
-	// Test file download by clicking on the document
-	// Set up download handler
+
+	// Click on the document to view details
 	require.Nil(t, uploadedDocumentTitle.Click())
+
+	// Test title editing functionality
+	// Click the Edit button
+	editButton := page.GetByRole("button", playwright.PageGetByRoleOptions{
+		Name: "Edit",
+	})
+	require.Nil(t, editButton.Click())
+
+	// Verify the title input field is visible and focused
+	titleInput := page.Locator("#title-input")
+	isVisible, err = titleInput.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Title input should be visible in edit mode")
+
+	// Verify action buttons have changed to Save/Cancel
+	saveButton := page.GetByRole("button", playwright.PageGetByRoleOptions{
+		Name: "Save",
+	})
+	cancelButton := page.GetByRole("button", playwright.PageGetByRoleOptions{
+		Name: "Cancel",
+	})
+	isVisible, err = saveButton.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Save button should be visible in edit mode")
+	isVisible, err = cancelButton.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Cancel button should be visible in edit mode")
+
+	// Change the title
+	newTitle := "Updated Invoice Document"
+	require.Nil(t, titleInput.Fill(newTitle))
+
+	// Click Save to submit the changes
+	require.Nil(t, saveButton.Click())
+
+	// Wait for page reload after save
+	err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
+		State: playwright.LoadStateNetworkidle,
+	})
+	require.Nil(t, err)
+
+	// Verify the title has been updated
+	updatedTitleDisplay := page.GetByRole("heading", playwright.PageGetByRoleOptions{
+		Name: newTitle,
+	})
+	isVisible, err = updatedTitleDisplay.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Updated title should be displayed after save")
+
+	// Verify Edit/Download/Trash buttons are back
+	editButton = page.GetByRole("button", playwright.PageGetByRoleOptions{
+		Name: "Edit",
+	})
+	isVisible, err = editButton.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Edit button should be visible after save")
+
+	// Test file download by clicking on download button
 
 	downloadLink := page.GetByRole("link", playwright.PageGetByRoleOptions{
 		Name: "Download",
@@ -79,7 +137,7 @@ func TestFileUploadAndDownload(t *testing.T) {
 	require.Nil(t, err)
 	require.Greater(t, fileInfo.Size(), int64(0), "Downloaded file should not be empty")
 
-	t.Logf("Successfully uploaded and downloaded file: %s (size: %d bytes)", downloadPath, fileInfo.Size())
+	t.Logf("Successfully uploaded file, edited title to '%s', and downloaded file: %s (size: %d bytes)", newTitle, downloadPath, fileInfo.Size())
 }
 
 func TestFileUploadInFolder(t *testing.T) {

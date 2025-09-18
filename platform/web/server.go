@@ -431,6 +431,40 @@ func (server *Server) handleRestoreDocument(w http.ResponseWriter, r *http.Reque
 	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
 }
 
+func (server *Server) handleUpdateDocumentTitle(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+	documentID := chi.URLParam(r, "id")
+	if documentID == "" {
+		templates.ErrorServer("").Render(r.Context(), w)
+		return
+	}
+
+	newTitle := r.FormValue("title")
+	if newTitle == "" {
+		session := server.getSession(r)
+		session.AddFlash("Title cannot be empty", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+		return
+	}
+
+	err := server.archive.UpdateDocumentTitle(documentID, user, newTitle)
+	if err != nil {
+		slog.Error("failed to update document title", slog.String("error", err.Error()))
+		session := server.getSession(r)
+		session.AddFlash("Failed to update document title", "error")
+		session.Save(r, w)
+		http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+		return
+	}
+
+	// Add success flash message and redirect back to the document page
+	session := server.getSession(r)
+	session.AddFlash("Document title updated successfully", "success")
+	session.Save(r, w)
+	http.Redirect(w, r, fmt.Sprintf("/archive/documents/%s", documentID), http.StatusFound)
+}
+
 func (server *Server) getDocumentPreview(w http.ResponseWriter, r *http.Request) {
 	user := server.getAuthenticatedUser(r)
 	documentID := chi.URLParam(r, "id")
@@ -861,6 +895,7 @@ func NewServer(
 			router.Get("/archive/documents/{id}/preview-component/{page}", server.getDocumentPreviewComponent)
 			router.Post("/archive/documents/{id}/delete", server.handleDeleteDocument)
 			router.Post("/archive/documents/{id}/restore", server.handleRestoreDocument)
+			router.Post("/archive/documents/{id}/update-title", server.handleUpdateDocumentTitle)
 			router.Get("/search", server.getSearch)
 			router.Get("/search/execute", server.handleSearch)
 

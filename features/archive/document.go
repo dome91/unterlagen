@@ -31,6 +31,7 @@ type Filetype string
 
 type Document struct {
 	ID               string
+	Title            string
 	Filename         string
 	Filetype         Filetype
 	Filesize         uint64
@@ -44,8 +45,10 @@ type Document struct {
 }
 
 func newDocument(filename string, filetype Filetype, filesize uint64, owner string, folderID string) Document {
+	title := strings.TrimSuffix(filename, filepath.Ext(filename))
 	return Document{
 		ID:       common.GenerateID(),
+		Title:    title,
 		Filename: filename,
 		Filetype: filetype,
 		Filesize: filesize,
@@ -270,6 +273,22 @@ func (d *documents) RestoreDocument(documentID string, owner string) error {
 	}
 
 	document.TrashedAt.Valid = false
+	return d.repository.Save(document)
+}
+
+func (d *documents) UpdateDocumentTitle(documentID string, owner string, newTitle string) error {
+	document, err := d.repository.FindByID(documentID)
+	if err != nil {
+		return err
+	}
+
+	if document.Owner != owner {
+		return errors.New("unauthorized")
+	}
+
+	document.Title = newTitle
+	document.UpdatedAt = time.Now()
+
 	return d.repository.Save(document)
 }
 
