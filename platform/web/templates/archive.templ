@@ -180,7 +180,7 @@ templ DocumentUploadButton(folderID string) {
 }
 
 templ DocumentCard(document archive.Document) {
-	<a href={ templ.SafeURL("/archive/documents/" + document.ID) } class={ "card card-compact transition-colors", templ.KV("opacity-50", document.IsTrashed()) }>
+	<a href={ templ.SafeURL("/archive/documents/" + document.ID) } class={ "card card-compact hover:bg-base-300 transition-colors", templ.KV("opacity-50", document.IsTrashed()) }>
 		<div class="card-body items-center text-center">
 			if document.IsTrashed() {
 				@TrashIcon("w-12 h-12 mb-2 text-error/70")
@@ -193,7 +193,7 @@ templ DocumentCard(document archive.Document) {
 }
 
 templ FolderCard(name string, id string) {
-	<a href={ templ.SafeURL("/archive?folderID=" + id) } class="card card-compact bg-base-200 hover:bg-base-300 transition-colors cursor-pointer">
+	<a href={ templ.SafeURL("/archive?folderID=" + id) } class="card card-compact hover:bg-base-300 transition-colors cursor-pointer">
 		<div class="card-body items-center text-center">
 			@FolderIcon("size-12 mb-2 text-base-content/70")
 			<p class="text-sm break-words w-full">{ name }</p>
