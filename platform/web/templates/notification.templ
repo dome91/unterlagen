@@ -16,7 +16,7 @@ type Notification struct {
 
 templ notificationContainer(notifications []Notification) {
 	if len(notifications) > 0 {
-		<div class="fixed top-4 right-4 z-50 w-full max-w-sm space-y-2 pointer-events-none">
+		<div class="fixed top-4 right-4 z-50 w-full max-w-sm space-y-2">
 			for _, n := range notifications {
 				@notification(n)
 			}

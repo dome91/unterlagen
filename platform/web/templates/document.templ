@@ -18,48 +18,96 @@ templ DocumentDetails(document archive.Document, notifications []Notification, i
 					<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 						@documentInformation(document)
 						if len(document.PreviewFilepaths) > 0 {
-							@documentPreview(document)
+							@DocumentPreviewComponent(document, 0)
 						}
 					</div>
 				</div>
 			</div>
 		</div>
+		<script>
+		    function editDocument() {
+        	    const documentId = window.location.pathname.split('/').pop();
+        		const titleSection = document.getElementById('title-section');
+        		const actionButtons = document.getElementById('action-buttons');
+        		const currentTitle = titleSection.querySelector('h1').textContent;
+
+        		// Replace title with input
+        		titleSection.innerHTML = `
+        			<input type="text" name="title" value="${currentTitle}" class="input input-bordered text-2xl font-bold w-full" id="title-input" required>
+        		`;
+
+        		// Replace action buttons with save/cancel
+        		actionButtons.innerHTML = `
+        			<form method="POST" action="/archive/documents/${documentId}/update-title" class="inline">
+        				<input type="hidden" name="title" id="hidden-title-input">
+        				<button type="submit" onclick="saveEdit()" class="btn btn-success">
+        					Save
+        				</button>
+        			</form>
+        			<button type="button" onclick="cancelEdit()" class="btn btn-ghost">
+        				Cancel
+        			</button>
+        		`;
+
+        		const input = document.getElementById('title-input');
+        		input.focus();
+        		input.select();
+        	}
+
+        	function saveEdit() {
+        		const titleInput = document.getElementById('title-input');
+        		const hiddenInput = document.getElementById('hidden-title-input');
+        		hiddenInput.value = titleInput.value;
+        	}
+
+        	function cancelEdit() {
+        		location.reload();
+        	}
+        </script>
 	}
 }
 
 templ documentActions(document archive.Document) {
-	<div class="flex items-start justify-between mb-6">
-		<div class="flex items-center gap-4">
-			if document.IsTrashed() {
-				@TrashIcon("w-16 h-16 text-error")
-			} else {
-				@DocumentIcon("w-16 h-16 text-primary")
-			}
-			<div>
-				<h1 class="text-2xl font-bold">{ document.Name() }</h1>
-				<p class="text-base-content/70">{ document.Filename }</p>
+	<div class="mb-6">
+		<div class="flex items-start justify-between space-x-4">
+			<div class="flex items-center gap-4 w-full">
+				if document.IsTrashed() {
+					@TrashIcon("w-16 h-16 text-error")
+				} else {
+					@DocumentIcon("w-16 h-16 text-primary")
+				}
+				<div class="flex-1">
+					<div id="title-section">
+						<h1 class="text-2xl font-bold">{ document.Title }</h1>
+					</div>
+					<p class="text-base-content/70">{ document.Filename }</p>
+				</div>
 			</div>
-		</div>
-		<div class="flex gap-2">
-			<a href={ templ.SafeURL("/archive/documents/" + document.ID + "/download") } class="btn btn-primary">
-				@ArrowDownTrayIcon("size-5")
-				Download
-			</a>
-			if document.IsTrashed() {
-				<form method="POST" action={ "/archive/documents/" + document.ID + "/restore" } class="inline">
-					<button type="submit" class="btn btn-success">
-						@ArrowUpTrayIcon("size-5")
-						Restore
-					</button>
-				</form>
-			} else {
-				<form method="POST" action={ "/archive/documents/" + document.ID + "/delete" } class="inline" onsubmit="return confirm('Are you sure you want to trash this document?');">
-					<button type="submit" class="btn btn-error">
-						@TrashIcon("size-5")
-						Trash
-					</button>
-				</form>
-			}
+			<div id="action-buttons" class="flex gap-2">
+				<button onclick="editDocument()" class="btn btn-secondary">
+					@PencilIcon("size-5")
+					Edit
+				</button>
+				<a href={ templ.SafeURL("/archive/documents/" + document.ID + "/download") } class="btn btn-primary">
+					@ArrowDownTrayIcon("size-5")
+					Download
+				</a>
+				if document.IsTrashed() {
+					<form method="POST" action={ "/archive/documents/" + document.ID + "/restore" } class="inline">
+						<button type="submit" class="btn btn-success">
+							@ArrowUpTrayIcon("size-5")
+							Restore
+						</button>
+					</form>
+				} else {
+					<form method="POST" action={ "/archive/documents/" + document.ID + "/delete" } class="inline" onsubmit="return confirm('Are you sure you want to trash this document?');">
+						<button type="submit" class="btn btn-error">
+							@TrashIcon("size-5")
+							Trash
+						</button>
+					</form>
+				}
+			</div>
 		</div>
 	</div>
 }
@@ -106,10 +154,6 @@ templ documentInformation(document archive.Document) {
 			</div>
 		}
 	</div>
-}
-
-templ documentPreview(document archive.Document) {
-	@DocumentPreviewComponent(document, 0)
 }
 
 templ DocumentPreviewComponent(document archive.Document, currentPage int) {
