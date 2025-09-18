@@ -74,3 +74,46 @@ Use HTMX for client-side and partial updates.
 ## Testing Strategy
 
 Uses Playwright for end-to-end testing with in-memory sqlite repositories for isolation. Tests require the session key environment variable to be set.
+
+## Frontend Patterns and Best Practices
+
+### Template Structure
+- **templ Components**: Use semantic component names (e.g., `DocumentActions`, `DocumentTitleDisplay`)
+- **ID Naming**: Use kebab-case for HTML IDs (e.g., `title-section`, `action-buttons`)
+- **CSS Classes**: Combine Tailwind utility classes with DaisyUI component classes
+- **Responsive Design**: Use responsive prefixes (`lg:`, `md:`) for layout adjustments
+
+### JavaScript Integration
+- **Inline Scripts**: Place JavaScript directly in templ `script` blocks for component-specific functionality
+- **Global Functions**: Expose functions to `window` object when needed across components
+- **DOM Manipulation**: Use `innerHTML` for dynamic content replacement
+- **Event Handling**: Attach event listeners via `onclick` attributes or `addEventListener`
+
+### Form Handling
+- **POST + Redirect Pattern**: Use standard form POST with server redirect instead of complex HTMX partial updates for simplicity
+- **Hidden Inputs**: Use hidden form fields to pass data between JavaScript and server
+- **Form Validation**: Leverage HTML5 validation attributes (`required`, etc.)
+
+### UI State Management
+- **Mode-Based Interfaces**: Toggle between view/edit modes by replacing HTML content
+- **Action Button Transformation**: Replace action button sets based on current mode (e.g., Edit/Download/Trash ↔ Save/Cancel)
+- **Focus Management**: Auto-focus and select text in inputs when entering edit mode
+- **Escape Key Handling**: Provide keyboard shortcuts for canceling operations
+
+### Document Management Patterns
+- **Title Editing**: Implement inline editing with mode switching rather than separate edit pages
+- **File Operations**: Use direct links for downloads, forms for state-changing operations
+- **Preview Integration**: Embed document previews with navigation controls
+- **Status Indicators**: Use visual cues (opacity, icons) to show document states (trashed, etc.)
+
+### Testing Patterns
+- **Page Object Pattern**: Use Playwright locators and role-based selectors
+- **Test Flow Integration**: Combine multiple operations (upload → edit → download) in single test flows
+- **State Verification**: Verify both UI state changes and data persistence
+- **Wait Strategies**: Use `WaitForLoadState` for network-dependent operations
+
+### Error Handling and UX
+- **Confirmation Dialogs**: Use browser `confirm()` for destructive operations
+- **Progressive Enhancement**: Ensure forms work without JavaScript
+- **Loading States**: Handle page transitions with appropriate loading indicators
+- **User Feedback**: Provide clear success/error messages via flash notifications
