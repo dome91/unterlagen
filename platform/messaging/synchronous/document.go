@@ -33,7 +33,7 @@ func (d *DocumentMessages) PublishDocumentDeleted(document archive.Document) err
 	return nil
 }
 
-func (d *DocumentMessages) PublishDocumentUploaded(document archive.Document) error {
+func (d *DocumentMessages) PublishDocumentUpserted(document archive.Document) error {
 	for _, subscriber := range d.documentUploadedSubscribers {
 		err := subscriber(document)
 		if err != nil {
@@ -53,7 +53,7 @@ func (d *DocumentMessages) SubscribeDocumentDeleted(subscriber func(document arc
 	return nil
 }
 
-func (d *DocumentMessages) SubscribeDocumentUploaded(subscriber func(document archive.Document) error) error {
+func (d *DocumentMessages) SubscribeDocumentUpserted(subscriber func(document archive.Document) error) error {
 	d.documentUploadedSubscribers = append(d.documentUploadedSubscribers, subscriber)
 	return nil
 }
