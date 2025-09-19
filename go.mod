@@ -7,12 +7,13 @@ require (
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gorilla/sessions v1.4.0
 	github.com/h2non/filetype v1.1.3
+	github.com/invopop/jsonschema v0.13.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/klippa-app/go-pdfium v1.17.1
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/ncruces/go-sqlite3 v0.29.0
 	github.com/ollama/ollama v0.12.0
-	github.com/openai/openai-go v1.12.0
+	github.com/openai/openai-go/v2 v2.5.0
 	github.com/playwright-community/playwright-go v0.5200.0
 	github.com/pressly/goose/v3 v3.25.0
 	github.com/spf13/afero v1.15.0
@@ -24,6 +25,8 @@ require (
 require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -36,6 +39,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
@@ -54,6 +58,7 @@ require (
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect

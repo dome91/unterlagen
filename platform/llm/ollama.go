@@ -2,24 +2,29 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
+	"unterlagen/features/archive"
 	"unterlagen/features/assistant"
 
 	"github.com/ollama/ollama/api"
 )
 
 var (
-	_ assistant.Embedder = &Ollama{}
-	_ assistant.Answerer = &Ollama{}
+	_ assistant.Embedder         = &Ollama{}
+	_ assistant.Answerer         = &Ollama{}
+	_ archive.DocumentSummarizer = &Ollama{}
 )
 
 const (
 	embeddingModel     = "nomic-embed-text"
 	knowledgeBaseModel = "gemma:2b"
+	summarizationModel = "phi4:latest"
 )
 
 type Ollama struct {
-	client *api.Client
+	client              *api.Client
+	summarizationFormat json.RawMessage
 }
 
 // Generate implements assistant.Embedder.
@@ -42,7 +47,7 @@ func (o *Ollama) Answer(question string, nodes []assistant.Node) (string, error)
 		contextForQuestion += node.Chunk
 		contextForQuestion += "\n"
 	}
-	systemMessage := strings.ReplaceAll(prompt, "{context}", contextForQuestion)
+	systemMessage := strings.ReplaceAll(assistantPrompt, "{context}", contextForQuestion)
 
 	var answer string
 	err := o.client.Generate(context.Background(), &api.GenerateRequest{
@@ -58,11 +63,54 @@ func (o *Ollama) Answer(question string, nodes []assistant.Node) (string, error)
 	return answer, err
 }
 
+func (o *Ollama) SummarizeText(text string) (archive.DocumentSummary, error) {
+	systemPrompt := `You are a document analyzer. Analyze the document and provide a structured summary.
+					Provide an overview that is one clear, concise sentence describing what the document is about.
+					Provide key_points that list 3-5 important facts, topics, or conclusions from the document.
+					Guidelines:
+					- Use objective, professional language
+					- Focus on the most important content and conclusions
+					- Do not add information not present in the original text`
+
+	var response string
+	err := o.client.Generate(context.Background(), &api.GenerateRequest{
+		Model:  summarizationModel,
+		System: systemPrompt,
+		Prompt: text,
+		Stream: new(bool),
+		Format: o.summarizationFormat,
+	}, func(gr api.GenerateResponse) error {
+		response = gr.Response
+		return nil
+	})
+
+	if err != nil {
+		return archive.DocumentSummary{}, err
+	}
+	var summary archive.DocumentSummary
+	err = json.Unmarshal([]byte(response), &summary)
+	return summary, err
+}
+
 func NewOllama() *Ollama {
 	client, err := api.ClientFromEnvironment()
 	if err != nil {
 		panic(err)
 	}
 
-	return &Ollama{client: client}
+	return &Ollama{client: client, summarizationFormat: []byte(`
+	{
+	  "type": "object",
+	  "properties": {
+		"overview": {
+		  "type": "string"
+		},
+		"key_points": {
+		  "type": "array",
+		  "items": {
+			"type": "string"
+		  }
+		}
+	  }
+	}`)}
 }

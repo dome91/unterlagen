@@ -2,6 +2,7 @@ package llm
 
 import (
 	"log/slog"
+	"unterlagen/features/archive"
 	"unterlagen/features/assistant"
 	"unterlagen/platform/configuration"
 )
@@ -44,4 +45,19 @@ func GetChunker(c configuration.Configuration) assistant.Chunker {
 
 	slog.Info("Fixed Size chosen as Chunker")
 	return NewFixedSizeChunker(c)
+}
+
+func GetSummarizer(c configuration.Configuration) archive.DocumentSummarizer {
+	if c.Assistant.Provider == configuration.OpenAI {
+		slog.Info("OpenAI chosen as Summarizer")
+		return NewOpenAI(c)
+	}
+
+	if c.Assistant.Provider == configuration.Ollama {
+		slog.Info("Ollama chosen as Summarizer")
+		return NewOllama()
+	}
+
+	slog.Info("DumbAI chosen as Summarizer")
+	return NewDumbAI()
 }

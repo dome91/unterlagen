@@ -145,6 +145,43 @@ templ documentInformation(document archive.Document) {
 				}
 			</div>
 		</div>
+		<div class="flex-shrink-0">
+			<h3 class="text-lg font-semibold mb-3">Summary</h3>
+			if document.Summary.Overview != "" || len(document.Summary.KeyPoints) > 0 {
+				<div class="bg-base-200 p-4 rounded-lg space-y-4">
+					if document.Summary.Overview != "" {
+						<div>
+							<h4 class="font-medium text-sm text-base-content/80 mb-2">Overview</h4>
+							<p class="text-sm leading-relaxed">{ document.Summary.Overview }</p>
+						</div>
+					}
+					if len(document.Summary.KeyPoints) > 0 {
+						<div>
+							<h4 class="font-medium text-sm text-base-content/80 mb-2">Key Points</h4>
+							<ul class="text-sm space-y-1">
+								for _, point := range document.Summary.KeyPoints {
+									<li class="flex items-start gap-2">
+										<span class="text-primary mt-1">•</span>
+										<span class="leading-relaxed">{ point }</span>
+									</li>
+								}
+							</ul>
+						</div>
+					}
+				</div>
+			} else if document.Text != "" {
+				<div class="bg-base-200 p-4 rounded-lg">
+					<div class="flex items-center gap-3 text-base-content/60">
+						<span class="loading loading-spinner loading-sm"></span>
+						<p class="text-sm">Generating summary...</p>
+					</div>
+				</div>
+			} else {
+				<div class="bg-base-200 p-4 rounded-lg">
+					<p class="text-sm text-base-content/60">Summary will be available after text extraction</p>
+				</div>
+			}
+		</div>
 		if document.Text != "" {
 			<div class="flex flex-col min-h-0 flex-grow">
 				<h3 class="text-lg font-semibold mb-3 flex-shrink-0">Extracted Text Preview</h3>

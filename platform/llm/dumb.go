@@ -2,12 +2,14 @@ package llm
 
 import (
 	"time"
+	"unterlagen/features/archive"
 	"unterlagen/features/assistant"
 )
 
 var (
-	_ assistant.Embedder = &DumbAI{}
-	_ assistant.Answerer = &DumbAI{}
+	_ assistant.Embedder        = &DumbAI{}
+	_ assistant.Answerer        = &DumbAI{}
+	_ archive.DocumentSummarizer = &DumbAI{}
 )
 
 // DumbAI does nothing and is used when no AI is provided via configuration
@@ -23,7 +25,11 @@ func (ai *DumbAI) Answer(question string, nodes []assistant.Node) (string, error
 // Generate implements assistant.Embedder.
 func (ai *DumbAI) Generate(text string) (assistant.Embeddings, error) {
 	return assistant.Embeddings{0.0, 0.0, 0.0, 0.0}, nil
+}
 
+// SummarizeText implements archive.DocumentSummarizer.
+func (ai *DumbAI) SummarizeText(text string) (archive.DocumentSummary, error) {
+	return archive.DocumentSummary{}, nil // Return empty summary when no LLM is available
 }
 
 func NewDumbAI() *DumbAI {

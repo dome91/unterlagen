@@ -36,6 +36,7 @@ type Document struct {
 	Filetype         Filetype
 	Filesize         uint64
 	Text             string
+	Summary          DocumentSummary
 	PreviewFilepaths []string
 	Owner            string
 	FolderID         string
@@ -84,6 +85,11 @@ func (document Document) IsTrashed() bool {
 	return document.TrashedAt.Valid
 }
 
+type DocumentSummary struct {
+	Overview  string   `json:"overview"`
+	KeyPoints []string `json:"key_points"`
+}
+
 type DocumentRepository interface {
 	Save(document Document) error
 	FindByID(id string) (Document, error)
@@ -111,6 +117,10 @@ type DocumentPreviewStorage interface {
 type DocumentAnalyzer interface {
 	GeneratePreviews(document Document) ([]string, error)
 	ExtractText(document Document) (string, error)
+}
+
+type DocumentSummarizer interface {
+	SummarizeText(text string) (DocumentSummary, error)
 }
 
 type DocumentMessages interface {
@@ -388,6 +398,7 @@ func newDocuments(
 	storage DocumentStorage,
 	previewStorage DocumentPreviewStorage,
 	messages DocumentMessages,
+	summarizer DocumentSummarizer,
 	jobScheduler *common.JobScheduler,
 	taskScheduler *common.TaskScheduler,
 	shutdown *common.Shutdown) *documents {
@@ -400,8 +411,18 @@ func newDocuments(
 		taskScheduler:  taskScheduler,
 	}
 
-	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, shutdown)
+	documentProcessor := newDocumentProcessor(repository, storage, previewStorage, messages, summarizer, shutdown)
 	jobScheduler.Schedule(documents.emptyTrash)
 	taskScheduler.Register(documentProcessor)
+
+	// Schedule summarization after text extraction completes
+	err := messages.SubscribeDocumentTextExtracted(func(document Document) error {
+		payload := DocumentProcessingPayload{DocumentID: document.ID}
+		return taskScheduler.ScheduleTask(common.TaskTypeSummarizeDocument, payload, 3)
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	return documents
 }
