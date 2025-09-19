@@ -1,13 +1,84 @@
 package sqlite
 
 import (
+	"database/sql"
+	"encoding/json"
 	"strings"
+	"time"
 	"unterlagen/features/archive"
 
 	"github.com/jmoiron/sqlx"
 )
 
 var _ archive.DocumentRepository = &DocumentRepository{}
+
+// DocumentEntity represents a document in the database layer
+type DocumentEntity struct {
+	ID        string       `db:"id"`
+	Title     string       `db:"title"`
+	Filename  string       `db:"filename"`
+	Filetype  string       `db:"filetype"`
+	Filesize  uint64       `db:"filesize"`
+	Text      string       `db:"text"`
+	Summary   []byte       `db:"summary"` // JSON stored as bytes
+	FolderID  string       `db:"folder_id"`
+	Owner     string       `db:"owner"`
+	CreatedAt time.Time    `db:"created_at"`
+	UpdatedAt time.Time    `db:"updated_at"`
+	TrashedAt sql.NullTime `db:"trashed_at"`
+}
+
+// to converts DocumentEntity to archive.Document
+func (entity *DocumentEntity) to() (archive.Document, error) {
+	// Deserialize summary
+	var summary archive.DocumentSummary
+	if len(entity.Summary) > 0 {
+		err := json.Unmarshal(entity.Summary, &summary)
+		if err != nil {
+			return archive.Document{}, err
+		}
+	}
+
+	return archive.Document{
+		ID:        entity.ID,
+		Title:     entity.Title,
+		Filename:  entity.Filename,
+		Filetype:  archive.Filetype(entity.Filetype),
+		Filesize:  entity.Filesize,
+		Text:      entity.Text,
+		Summary:   summary,
+		FolderID:  entity.FolderID,
+		Owner:     entity.Owner,
+		CreatedAt: entity.CreatedAt,
+		UpdatedAt: entity.UpdatedAt,
+		TrashedAt: entity.TrashedAt,
+	}, nil
+}
+
+// from converts archive.Document to DocumentEntity
+func (entity *DocumentEntity) from(doc archive.Document) error {
+	summaryData, err := json.Marshal(doc.Summary)
+	if err != nil {
+		return err
+	}
+
+	*entity = DocumentEntity{
+		ID:        doc.ID,
+		Title:     doc.Title,
+		Filename:  doc.Filename,
+		Filetype:  string(doc.Filetype),
+		Filesize:  doc.Filesize,
+		Text:      doc.Text,
+		Summary:   summaryData,
+		FolderID:  doc.FolderID,
+		Owner:     doc.Owner,
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+		TrashedAt: doc.TrashedAt,
+	}
+
+	return nil
+}
 
 type DocumentRepository struct {
 	*sqlx.DB
@@ -33,19 +104,28 @@ func (d *DocumentRepository) FindAllByIDIn(ids []string) ([]archive.Document, er
 	query = "SELECT * FROM documents WHERE id IN (?" + strings.Repeat(",?", len(ids)-1) + ")"
 
 	// Execute the query
-	var documents []archive.Document
-	err := d.Select(&documents, query, args...)
+	var entities []DocumentEntity
+	err := d.Select(&entities, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Load preview filepaths for each document
-	for i := range documents {
-		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+	// Convert entities to domain objects
+	var documents []archive.Document
+	for _, entity := range entities {
+		document, err := entity.to()
 		if err != nil {
 			return nil, err
 		}
-		documents[i].PreviewFilepaths = previews
+
+		// Load preview filepaths
+		previews, err := d.loadPreviewFilepaths(document.ID)
+		if err != nil {
+			return nil, err
+		}
+		document.PreviewFilepaths = previews
+
+		documents = append(documents, document)
 	}
 
 	return documents, nil
@@ -53,19 +133,28 @@ func (d *DocumentRepository) FindAllByIDIn(ids []string) ([]archive.Document, er
 
 // FindAllByOwner implements archive.DocumentRepository.
 func (d *DocumentRepository) FindAllByOwner(owner string) ([]archive.Document, error) {
-	var documents []archive.Document
-	err := d.Select(&documents, "SELECT * FROM documents WHERE owner = ?", owner)
+	var entities []DocumentEntity
+	err := d.Select(&entities, "SELECT * FROM documents WHERE owner = ?", owner)
 	if err != nil {
 		return nil, err
 	}
 
-	// Load preview filepaths for each document
-	for i := range documents {
-		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+	// Convert entities to domain objects
+	var documents []archive.Document
+	for _, entity := range entities {
+		document, err := entity.to()
 		if err != nil {
 			return nil, err
 		}
-		documents[i].PreviewFilepaths = previews
+
+		// Load preview filepaths
+		previews, err := d.loadPreviewFilepaths(document.ID)
+		if err != nil {
+			return nil, err
+		}
+		document.PreviewFilepaths = previews
+
+		documents = append(documents, document)
 	}
 
 	return documents, nil
@@ -79,19 +168,28 @@ func (d *DocumentRepository) DeleteByID(id string) error {
 
 // FindAllByFolderID implements archive.DocumentRepository.
 func (d *DocumentRepository) FindAllByFolderID(folderID string) ([]archive.Document, error) {
-	var documents []archive.Document
-	err := d.Select(&documents, "SELECT * FROM documents WHERE folder_id = ?", folderID)
+	var entities []DocumentEntity
+	err := d.Select(&entities, "SELECT * FROM documents WHERE folder_id = ?", folderID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Load preview filepaths for each document
-	for i := range documents {
-		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+	// Convert entities to domain objects
+	var documents []archive.Document
+	for _, entity := range entities {
+		document, err := entity.to()
 		if err != nil {
 			return nil, err
 		}
-		documents[i].PreviewFilepaths = previews
+
+		// Load preview filepaths
+		previews, err := d.loadPreviewFilepaths(document.ID)
+		if err != nil {
+			return nil, err
+		}
+		document.PreviewFilepaths = previews
+
+		documents = append(documents, document)
 	}
 
 	return documents, nil
@@ -99,19 +197,28 @@ func (d *DocumentRepository) FindAllByFolderID(folderID string) ([]archive.Docum
 
 // FindAllTrashed implements archive.DocumentRepository.
 func (d *DocumentRepository) FindAllTrashed() ([]archive.Document, error) {
-	var documents []archive.Document
-	err := d.Select(&documents, "SELECT * FROM documents WHERE trashed_at IS NOT NULL")
+	var entities []DocumentEntity
+	err := d.Select(&entities, "SELECT * FROM documents WHERE trashed_at IS NOT NULL")
 	if err != nil {
 		return nil, err
 	}
 
-	// Load preview filepaths for each document
-	for i := range documents {
-		previews, err := d.loadPreviewFilepaths(documents[i].ID)
+	// Convert entities to domain objects
+	var documents []archive.Document
+	for _, entity := range entities {
+		document, err := entity.to()
 		if err != nil {
 			return nil, err
 		}
-		documents[i].PreviewFilepaths = previews
+
+		// Load preview filepaths
+		previews, err := d.loadPreviewFilepaths(document.ID)
+		if err != nil {
+			return nil, err
+		}
+		document.PreviewFilepaths = previews
+
+		documents = append(documents, document)
 	}
 
 	return documents, nil
@@ -119,8 +226,14 @@ func (d *DocumentRepository) FindAllTrashed() ([]archive.Document, error) {
 
 // FindByID implements archive.DocumentRepository.
 func (d *DocumentRepository) FindByID(id string) (archive.Document, error) {
-	var document archive.Document
-	err := d.Get(&document, "SELECT * FROM documents WHERE id = ?", id)
+	var entity DocumentEntity
+	err := d.Get(&entity, "SELECT * FROM documents WHERE id = ?", id)
+	if err != nil {
+		return archive.Document{}, err
+	}
+
+	// Convert entity to domain
+	document, err := entity.to()
 	if err != nil {
 		return archive.Document{}, err
 	}
@@ -143,21 +256,29 @@ func (d *DocumentRepository) Save(document archive.Document) error {
 	}
 	defer tx.Rollback()
 
-	// Save document
+	// Convert domain to entity
+	var entity DocumentEntity
+	err = entity.from(document)
+	if err != nil {
+		return err
+	}
+
+	// Save document using NamedExec for cleaner code
 	_, err = tx.NamedExec(`
-		INSERT INTO documents (id, title, filename, filetype, filesize, text, folder_id, owner, created_at, updated_at, trashed_at)
-		VALUES (:id, :title, :filename, :filetype, :filesize, :text, :folder_id, :owner, :created_at, :updated_at, :trashed_at)
+		INSERT INTO documents (id, title, filename, filetype, filesize, text, summary, folder_id, owner, created_at, updated_at, trashed_at)
+		VALUES (:id, :title, :filename, :filetype, :filesize, :text, :summary, :folder_id, :owner, :created_at, :updated_at, :trashed_at)
 		ON CONFLICT(id) DO UPDATE SET
-			title = :title,
-			filename = :filename,
-			filetype = :filetype,
-			filesize = :filesize,
-			text = :text,
-			folder_id = :folder_id,
-			owner = :owner,
+			title = excluded.title,
+			filename = excluded.filename,
+			filetype = excluded.filetype,
+			filesize = excluded.filesize,
+			text = excluded.text,
+			summary = excluded.summary,
+			folder_id = excluded.folder_id,
+			owner = excluded.owner,
 			updated_at = datetime(),
-			trashed_at = :trashed_at
-	`, document)
+			trashed_at = excluded.trashed_at
+	`, entity)
 	if err != nil {
 		return err
 	}

@@ -86,9 +86,10 @@ type TaskType string
 type TaskStatus string
 
 const (
-	TaskTypeExtractText      TaskType = "extract_text"
-	TaskTypeGeneratePreviews TaskType = "generate_previews"
-	TaskTypeIndexDocument    TaskType = "index_document"
+	TaskTypeExtractText       TaskType = "extract_text"
+	TaskTypeGeneratePreviews  TaskType = "generate_previews"
+	TaskTypeIndexDocument     TaskType = "index_document"
+	TaskTypeSummarizeDocument TaskType = "summarize_document"
 )
 
 const (

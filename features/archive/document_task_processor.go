@@ -23,6 +23,7 @@ type DocumentTaskProcessor struct {
 	storage        DocumentStorage
 	previewStorage DocumentPreviewStorage
 	messages       DocumentMessages
+	summarizer     DocumentSummarizer
 	analyzers      map[Filetype]DocumentAnalyzer
 }
 
@@ -36,6 +37,8 @@ func (p *DocumentTaskProcessor) ProcessTask(task common.Task) error {
 		return p.processTextExtraction(task)
 	case common.TaskTypeGeneratePreviews:
 		return p.processPreviewGeneration(task)
+	case common.TaskTypeSummarizeDocument:
+		return p.processSummarization(task)
 	default:
 		return nil
 	}
@@ -45,6 +48,7 @@ func (p *DocumentTaskProcessor) ResponsibleFor() []common.TaskType {
 	return []common.TaskType{
 		common.TaskTypeExtractText,
 		common.TaskTypeGeneratePreviews,
+		common.TaskTypeSummarizeDocument,
 	}
 }
 
@@ -109,11 +113,45 @@ func (p *DocumentTaskProcessor) processPreviewGeneration(task common.Task) error
 	return p.messages.PublishDocumentTextExtracted(document)
 }
 
+func (p *DocumentTaskProcessor) processSummarization(task common.Task) error {
+	var payload DocumentProcessingPayload
+	if err := json.Unmarshal(task.Payload, &payload); err != nil {
+		return err
+	}
+
+	document, err := p.repository.FindByID(payload.DocumentID)
+	if err != nil {
+		return err
+	}
+
+	// Skip summarization if no text is available
+	if document.Text == "" {
+		slog.Warn("skipping summarization - no text available", "document_id", document.ID)
+		return nil
+	}
+
+	summary, err := p.summarizer.SummarizeText(document.Text)
+	if err != nil {
+		return err
+	}
+
+	document.Summary = summary
+	if err := p.repository.Save(document); err != nil {
+		return err
+	}
+
+	slog.Info("document summarized", "document_id", document.ID, "overview", summary.Overview, "key_points_count", len(summary.KeyPoints))
+
+	// Publish document upserted to trigger search reindexing
+	return p.messages.PublishDocumentUpserted(document)
+}
+
 func newDocumentProcessor(
 	repository DocumentRepository,
 	storage DocumentStorage,
 	previewStorage DocumentPreviewStorage,
 	messages DocumentMessages,
+	summarizer DocumentSummarizer,
 	shutdown *common.Shutdown,
 ) *DocumentTaskProcessor {
 	pdfAnalyzer := NewPDFAnalyzer(storage, previewStorage, shutdown)
@@ -125,6 +163,7 @@ func newDocumentProcessor(
 		storage:        storage,
 		previewStorage: previewStorage,
 		messages:       messages,
+		summarizer:     summarizer,
 		analyzers:      analyzers,
 	}
 }

@@ -27,7 +27,7 @@ type Node struct {
 
 type NodeRepository interface {
 	SaveAll(nodes []Node) error
-	FindSimiliarByEmbedding(embeddings Embeddings) ([]Node, error)
+	FindSimilarByEmbedding(embeddings Embeddings) ([]Node, error)
 	DeleteAllByDocumentID(documentID string) error
 }
 
@@ -65,7 +65,7 @@ func (a *Assistant) Ask(chatID string, question string, userID string) error {
 		return err
 	}
 
-	nodes, err := a.nodeRepository.FindSimiliarByEmbedding(embedding)
+	nodes, err := a.nodeRepository.FindSimilarByEmbedding(embedding)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func (a *Assistant) Ask(chatID string, question string, userID string) error {
 		return err
 	}
 
-	chat.AddMessage(UserRole, question)
-	chat.AddMessage(AssistantRole, answer)
+	chat.AddMessage(RoleUser, question)
+	chat.AddMessage(RoleAssistant, answer)
 	return a.chatRepository.Save(chat)
 }
 
@@ -108,7 +108,7 @@ func (a *Assistant) deleteNodes(document archive.Document) error {
 	return a.nodeRepository.DeleteAllByDocumentID(document.ID)
 }
 
-func NewAssistant(
+func New(
 	nodeRepository NodeRepository,
 	chatRepository ChatRepository,
 	answerer Answerer,
@@ -124,8 +124,14 @@ func NewAssistant(
 		chunker:        chunker,
 	}
 
-	documentMessages.SubscribeDocumentTextExtracted(assistant.generateNodes)
-	documentMessages.SubscribeDocumentDeleted(assistant.deleteNodes)
+	err := documentMessages.SubscribeDocumentTextExtracted(assistant.generateNodes)
+	if err != nil {
+		panic(err)
+	}
+	err = documentMessages.SubscribeDocumentDeleted(assistant.deleteNodes)
+	if err != nil {
+		panic(err)
+	}
 
 	return assistant
 }

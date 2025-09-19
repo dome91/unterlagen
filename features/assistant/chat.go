@@ -3,8 +3,8 @@ package assistant
 type Role string
 
 const (
-	UserRole      Role = "USER"
-	AssistantRole Role = "ASSISTANT"
+	RoleUser      Role = "USER"
+	RoleAssistant Role = "ASSISTANT"
 )
 
 type ChatMessage struct {

@@ -27,17 +27,39 @@ func (s *SearchRepository) IndexDocument(document archive.Document) error {
 		return fmt.Errorf("failed to delete existing document from search index %s: %w", document.ID, err)
 	}
 
+	// Convert structured summary to searchable text
+	summaryText := s.summaryToText(document.Summary)
+
 	// Insert/update the document in FTS table
 	_, err = s.Exec(`
-		INSERT INTO documents_fts(document_id, title, filename, text, owner)
-		VALUES (?, ?, ?, ?, ?)
-	`, document.ID, document.Title, document.Filename, document.Text, document.Owner)
+		INSERT INTO documents_fts(document_id, title, filename, text, summary, owner)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, document.ID, document.Title, document.Filename, document.Text, summaryText, document.Owner)
 	if err != nil {
 		return fmt.Errorf("failed to index document %s: %w", document.ID, err)
 	}
 
 	slog.Debug("indexed document", "id", document.ID, "title", document.Title)
 	return nil
+}
+
+// summaryToText converts a structured DocumentSummary to searchable text
+func (s *SearchRepository) summaryToText(summary archive.DocumentSummary) string {
+	if summary.Overview == "" && len(summary.KeyPoints) == 0 {
+		return ""
+	}
+
+	var parts []string
+
+	if summary.Overview != "" {
+		parts = append(parts, summary.Overview)
+	}
+
+	if len(summary.KeyPoints) > 0 {
+		parts = append(parts, strings.Join(summary.KeyPoints, " "))
+	}
+
+	return strings.Join(parts, " ")
 }
 
 // SearchDocuments implements search.SearchRepository.
