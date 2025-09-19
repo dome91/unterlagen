@@ -3,7 +3,6 @@ module unterlagen
 go 1.24.2
 
 require (
-	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gorilla/sessions v1.4.0
 	github.com/klippa-app/go-pdfium v1.14.1

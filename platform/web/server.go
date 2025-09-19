@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"runtime"
@@ -543,7 +542,7 @@ func (server *Server) getSearch(w http.ResponseWriter, r *http.Request) {
 	page := templates.PageSearch
 
 	// Start with empty results
-	var results []archive.Document
+	var results []search.SearchResult
 
 	templates.Search(notifications, page, isAdmin, results).Render(r.Context(), w)
 }
@@ -563,19 +562,7 @@ func (server *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var documentIDs []string
-	for _, hit := range hits {
-		documentIDs = append(documentIDs, hit.DocumentID)
-	}
-
-	documents, err := server.archive.GetDocuments(documentIDs, user)
-	if err != nil {
-		log.Printf("Error getting documents: %v", err)
-		templates.EmptySearchResults().Render(r.Context(), w)
-		return
-	}
-
-	templates.SearchResults(documents).Render(r.Context(), w)
+	templates.SearchResults(hits).Render(r.Context(), w)
 }
 
 func (server *Server) profile(w http.ResponseWriter, r *http.Request) {

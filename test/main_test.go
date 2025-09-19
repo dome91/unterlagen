@@ -56,7 +56,7 @@ func NewTestEnvironment() *TestEnvironment {
 	folderRepository := sqlite.NewFolderRepository(db)
 	taskRepository := sqlite.NewTaskRepository(db)
 	settingsRepository := memory.NewSettingsRepository()
-	searchRepository := memory.NewSearchRepository()
+	searchRepository := sqlite.NewSearchRepository(db)
 
 	// Messaging
 	userMessages := synchronous.NewUserMessages()

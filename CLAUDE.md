@@ -55,7 +55,7 @@ UNTERLAGEN_SERVER_SESSION_KEY=my-key go test ./test/...
 ```
 
 ### Database Migrations
-Migrations are in `platform/database/sqlite/migrations/` and use goose for version management.
+Migrations are in `platform/database/sqlite/migrations/` and use goose for version management. Migrations are automatically applied during application startup.
 
 ## Configuration
 

@@ -114,8 +114,8 @@ type DocumentAnalyzer interface {
 }
 
 type DocumentMessages interface {
-	PublishDocumentUploaded(document Document) error
-	SubscribeDocumentUploaded(subscriber func(document Document) error) error
+	PublishDocumentUpserted(document Document) error
+	SubscribeDocumentUpserted(subscriber func(document Document) error) error
 	PublishDocumentTextExtracted(document Document) error
 	SubscribeDocumentTextExtracted(subscriber func(document Document) error) error
 	PublishDocumentDeleted(document Document) error
@@ -137,7 +137,7 @@ func (d *documents) UploadDocument(filename string, filesize uint64, folderID st
 		return err
 	}
 
-	d.storage.Retrieve(document.Filepath(), func(r io.Reader) error {
+	err = d.storage.Retrieve(document.Filepath(), func(r io.Reader) error {
 		filetype, err := d.determineFiletype(r)
 		if err != nil {
 			return err
@@ -145,13 +145,16 @@ func (d *documents) UploadDocument(filename string, filesize uint64, folderID st
 		document.Filetype = filetype
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	err = d.repository.Save(document)
 	if err != nil {
 		return err
 	}
 
-	err = d.messages.PublishDocumentUploaded(document)
+	err = d.messages.PublishDocumentUpserted(document)
 	if err != nil {
 		return err
 	}
@@ -289,7 +292,12 @@ func (d *documents) UpdateDocumentTitle(documentID string, owner string, newTitl
 	document.Title = newTitle
 	document.UpdatedAt = time.Now()
 
-	return d.repository.Save(document)
+	err = d.repository.Save(document)
+	if err != nil {
+		return err
+	}
+
+	return d.messages.PublishDocumentUpserted(document)
 }
 
 func (d *documents) rescheduleAllDocumentTasks(owner string) error {

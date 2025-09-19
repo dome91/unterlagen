@@ -1,6 +1,7 @@
 package search
 
 import (
+	"log/slog"
 	"slices"
 	"strings"
 	"unterlagen/features/archive"
@@ -11,6 +12,7 @@ type SearchResult struct {
 	DocumentID string
 	Name       string
 	Rank       float64
+	Snippet    string
 }
 
 type SearchRepository interface {
@@ -39,6 +41,9 @@ func (s *Search) SearchDocuments(query string, owner string, limit int) ([]Searc
 		return nil, err
 	}
 
+	for _, result := range results {
+		slog.Info(result.Name, "rank", result.Rank)
+	}
 	slices.SortFunc(results, func(r1, r2 SearchResult) int {
 		if r1.Rank > r2.Rank {
 			return -1
@@ -55,9 +60,12 @@ func New(repository SearchRepository, documentMessages archive.DocumentMessages,
 	taskProcessor := NewSearchTaskProcessor(repository)
 	taskScheduler.Register(taskProcessor)
 
-	documentMessages.SubscribeDocumentTextExtracted(func(document archive.Document) error {
+	err := documentMessages.SubscribeDocumentTextExtracted(func(document archive.Document) error {
 		return taskScheduler.ScheduleTask(common.TaskTypeIndexDocument, document, 3)
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	return &Search{repository: repository}
 }
