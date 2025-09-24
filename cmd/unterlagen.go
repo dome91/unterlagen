@@ -21,10 +21,8 @@ import (
 
 func main() {
 	// Common functionality
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource: true,
-	})))
-	
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+
 	shutdown := common.NewShutdown()
 	jobScheduler := common.NewJobScheduler(shutdown)
 
