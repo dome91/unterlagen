@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"time"
 	"unterlagen/features/administration"
 	"unterlagen/features/archive"
 	"unterlagen/features/common"
@@ -379,6 +380,21 @@ func (server *Server) downloadDocument(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("failed to download document",
 			slog.String("documentID", documentID),
+			slog.String("user", user),
+			slog.String("error", err.Error()))
+	}
+}
+
+func (server *Server) exportAllDocuments(w http.ResponseWriter, r *http.Request) {
+	user := server.getAuthenticatedUser(r)
+
+	filename := fmt.Sprintf("documents-%s.zip", time.Now().Format("2006-01-02"))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Type", "application/zip")
+
+	err := server.archive.ExportAllDocuments(user, w)
+	if err != nil {
+		slog.Error("failed to export all documents",
 			slog.String("user", user),
 			slog.String("error", err.Error()))
 	}
@@ -873,6 +889,7 @@ func NewServer(
 			router.Get("/profile", server.profile)
 			router.Post("/logout", server.handleLogout)
 			router.Get("/archive", server.getArchive)
+			router.Get("/archive/export", server.exportAllDocuments)
 			router.Post("/archive/folders", server.handleCreateFolder)
 			router.Post("/archive/synchronize", server.handleSynchronize)
 			router.Post("/archive/documents", server.handleUploadDocument)

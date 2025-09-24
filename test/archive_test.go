@@ -316,3 +316,60 @@ func TestArchiveDocumentUploadAndViewDocumentInformation(t *testing.T) {
 
 	t.Logf("Successfully uploaded file, waited 5 seconds, and verified document information, text extraction, and preview image display")
 }
+
+func TestExportAllDocuments(t *testing.T) {
+	env := NewTestEnvironment()
+	go env.StartServer()
+	defer env.StopServer()
+
+	page := setupAndLogin(t)
+	defer page.Close()
+
+	_, err := page.Goto("http://localhost:8080/archive")
+	require.Nil(t, err)
+
+	testPDF1Path := filepath.Join("../testdata/mock_pdfs/invoice_0001.pdf")
+	testPDF1AbsPath, err := filepath.Abs(testPDF1Path)
+	require.Nil(t, err)
+
+	testPDF2Path := filepath.Join("../testdata/mock_pdfs/contract_SA_0001.pdf")
+	testPDF2AbsPath, err := filepath.Abs(testPDF2Path)
+	require.Nil(t, err)
+
+	files := []string{testPDF1AbsPath, testPDF2AbsPath}
+	fileInput := page.Locator("input[name='documents'][type='file']")
+	err = fileInput.SetInputFiles(files)
+	require.Nil(t, err)
+
+	err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
+		State: playwright.LoadStateNetworkidle,
+	})
+	require.Nil(t, err)
+
+	exportButton := page.GetByRole("link", playwright.PageGetByRoleOptions{
+		Name: "Export All",
+	})
+	isVisible, err := exportButton.IsVisible()
+	require.Nil(t, err)
+	require.True(t, isVisible, "Export All button should be visible")
+
+	download, err := page.ExpectDownload(func() error {
+		return exportButton.Click()
+	})
+	require.Nil(t, err)
+
+	downloadFilename := download.SuggestedFilename()
+	require.Contains(t, downloadFilename, "documents-")
+	require.Contains(t, downloadFilename, ".zip")
+
+	tempDir := t.TempDir()
+	savedPath := filepath.Join(tempDir, downloadFilename)
+	err = download.SaveAs(savedPath)
+	require.Nil(t, err)
+
+	fileInfo, err := os.Stat(savedPath)
+	require.Nil(t, err)
+	require.Greater(t, fileInfo.Size(), int64(0), "Downloaded ZIP file should not be empty")
+
+	t.Logf("Successfully exported all documents as ZIP: %s (size: %d bytes)", downloadFilename, fileInfo.Size())
+}
