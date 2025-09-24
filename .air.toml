@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
 args_bin = []
-full_bin = "UNTERLAGEN_SERVER_SESSION_KEY=unterlagen UNTERLAGEN_DATA_DIRECTORY=./tmp/data UNTERLAGEN_ASSISTANT_PROVIDER=ollama ./tmp/main"
+full_bin = "UNTERLAGEN_SERVER_SESSION_KEY=unterlagen UNTERLAGEN_DATA_DIRECTORY=./tmp/data UNTERLAGEN_ASSISTANT_PROVIDER=none ./tmp/main"
 cmd = "go build -o ./tmp/main cmd/unterlagen.go"
 delay = 1000
 include_ext = ["go", "tpl", "tmpl", "html", "templ"]
