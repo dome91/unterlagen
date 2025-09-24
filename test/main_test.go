@@ -12,6 +12,7 @@ import (
 	"unterlagen/platform/configuration"
 	"unterlagen/platform/database/memory"
 	"unterlagen/platform/database/sqlite"
+	"unterlagen/platform/llm"
 	"unterlagen/platform/messaging/synchronous"
 	"unterlagen/platform/storage/filesystem"
 	"unterlagen/platform/web"
@@ -66,10 +67,13 @@ func NewTestEnvironment() *TestEnvironment {
 	documentStorage := filesystem.NewDocumentStorage(configuration)
 	documentPreviewStorage := filesystem.NewDocumentPreviewStorage(configuration)
 
+	// LLM
+	documentSummarizer := llm.GetSummarizer(configuration)
+
 	// Features
 	taskScheduler := common.NewTaskScheduler(shutdown, taskRepository, common.TaskSchedulerModeSynchronous)
 	administration := administration.New(settingsRepository, userRepository, userMessages, taskRepository)
-	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
+	archive := archive.New(documentRepository, documentStorage, documentPreviewStorage, documentMessages, documentSummarizer, folderRepository, userMessages, jobScheduler, taskScheduler, shutdown)
 	search := search.New(searchRepository, documentMessages, taskScheduler)
 
 	// Web

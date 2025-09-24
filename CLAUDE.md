@@ -110,6 +110,7 @@ Uses Playwright for end-to-end testing with in-memory sqlite repositories for is
 - **Status Indicators**: Use visual cues (opacity, icons) to show document states (trashed, etc.)
 
 ### Testing Patterns
+- **ARIA Role Selectors**: ALWAYS prefer `GetByRole()` with ARIA roles (e.g., `role="alert"`, `role="button"`) over CSS selectors for better accessibility and maintainability
 - **Page Object Pattern**: Use Playwright locators and role-based selectors
 - **Test Flow Integration**: Combine multiple operations (upload → edit → download) in single test flows
 - **State Verification**: Verify both UI state changes and data persistence

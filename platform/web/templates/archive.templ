@@ -11,6 +11,7 @@ templ Archive(currentFolderID string, documents []archive.Document, folders []ar
 					@DocumentUploadButton(currentFolderID)
 					@CreateFolderButton()
 					@SynchronizeButton(currentFolderID)
+					@ExportAllButton()
 					@FilterDropdown(currentFolderID, showTrashed)
 				</div>
 			</div>
@@ -58,6 +59,13 @@ templ SynchronizeButton(folderID string) {
 			<span class="hidden md:inline">Synchronize</span>
 		</button>
 	</form>
+}
+
+templ ExportAllButton() {
+	<a href="/archive/export" class="btn btn-outline">
+		@ArrowDownTrayIcon("size-5")
+		<span class="hidden md:inline">Export All</span>
+	</a>
 }
 
 templ FilterDropdown(folderID string, showTrashed bool) {

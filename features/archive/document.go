@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"database/sql"
@@ -258,6 +259,41 @@ func (d *documents) DownloadDocument(documentID string, owner string, consumer D
 	}
 
 	return d.storage.Retrieve(document.Filepath(), consumer)
+}
+
+func (d *documents) ExportAllDocuments(owner string, writer io.Writer) error {
+	documents, err := d.repository.FindAllByOwner(owner)
+	if err != nil {
+		return err
+	}
+
+	zipWriter := zip.NewWriter(writer)
+	defer zipWriter.Close()
+
+	for _, document := range documents {
+		if document.IsTrashed() {
+			continue
+		}
+
+		err := d.storage.Retrieve(document.Filepath(), func(r io.Reader) error {
+			fileWriter, err := zipWriter.Create(document.Filename)
+			if err != nil {
+				return err
+			}
+
+			_, err = io.Copy(fileWriter, r)
+			return err
+		})
+
+		if err != nil {
+			slog.Error("failed to add document to zip",
+				slog.String("documentID", document.ID),
+				slog.String("error", err.Error()))
+			continue
+		}
+	}
+
+	return nil
 }
 
 func (d *documents) TrashDocument(documentID string, owner string) error {
