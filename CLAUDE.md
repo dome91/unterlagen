@@ -65,6 +65,9 @@ Configuration uses Viper with environment variables prefixed with `UNTERLAGEN_`:
 - `UNTERLAGEN_SERVER_SESSION_KEY` (required)
 - `UNTERLAGEN_ASSISTANT_PROVIDER` (none, openai, ollama)
 - `UNTERLAGEN_ASSISTANT_API_KEY`
+- `UNTERLAGEN_ASSISTANT_OLLAMA_EMBEDDING_MODEL` (default: embeddinggemma:300m)
+- `UNTERLAGEN_ASSISTANT_OLLAMA_KNOWLEDGE_BASE_MODEL` (default: phi4:latest)
+- `UNTERLAGEN_ASSISTANT_OLLAMA_SUMMARIZATION_MODEL` (default: phi4:latest)
 
 ## Template System
 

@@ -26,6 +26,13 @@ type AssistantConfiguration struct {
 	Provider AssistantProvider
 	ApiKey   string
 	Chunker  AssistantChunkerConfiguration
+	Ollama   OllamaConfiguration
+}
+
+type OllamaConfiguration struct {
+	EmbeddingModel        string
+	KnowledgeBaseModel    string
+	SummarizationModel    string
 }
 
 type AssistantChunkerConfiguration struct {
@@ -69,6 +76,11 @@ func Load() Configuration {
 				MaxChunkSize: viper.GetInt("assistant_chunker_max_chunk_size"),
 				ChunkOverlap: viper.GetInt("assistant_chunker_chunk_overlap"), // Fixed key name
 			},
+			Ollama: OllamaConfiguration{
+				EmbeddingModel:        viper.GetString("assistant_ollama_embedding_model"),
+				KnowledgeBaseModel:    viper.GetString("assistant_ollama_knowledge_base_model"),
+				SummarizationModel:    viper.GetString("assistant_ollama_summarization_model"),
+			},
 		},
 		Data: DataConfiguration{
 			Directory: viper.GetString("data_directory"),
@@ -99,4 +111,9 @@ func setDefaults() {
 
 	// Data defaults
 	viper.SetDefault("data_directory", "data")
+
+	// Ollama defaults
+	viper.SetDefault("assistant_ollama_embedding_model", "embeddinggemma:300m")
+	viper.SetDefault("assistant_ollama_knowledge_base_model", "phi4:latest")
+	viper.SetDefault("assistant_ollama_summarization_model", "phi4:latest")
 }

@@ -7,55 +7,55 @@ import (
 	"unterlagen/platform/configuration"
 )
 
-func GetEmbedder(c configuration.Configuration) assistant.Embedder {
-	if c.Assistant.Provider == configuration.OpenAI {
+func GetEmbedder(config configuration.Configuration) assistant.Embedder {
+	if config.Assistant.Provider == configuration.OpenAI {
 		slog.Info("OpenAI chosen as embedder")
-		return NewOpenAI(c)
+		return NewOpenAI(config)
 	}
 
-	if c.Assistant.Provider == configuration.Ollama {
+	if config.Assistant.Provider == configuration.Ollama {
 		slog.Info("Ollama chosen as embedder")
-		return NewOllama()
+		return NewOllama(config)
 	}
 
 	slog.Info("DumbAI chosen as embedder")
 	return NewDumbAI()
 }
 
-func GetAnswerer(c configuration.Configuration) assistant.Answerer {
-	if c.Assistant.Provider == configuration.OpenAI {
+func GetAnswerer(config configuration.Configuration) assistant.Answerer {
+	if config.Assistant.Provider == configuration.OpenAI {
 		slog.Info("OpenAI chosen as Answerer")
-		return NewOpenAI(c)
+		return NewOpenAI(config)
 	}
 
-	if c.Assistant.Provider == configuration.Ollama {
+	if config.Assistant.Provider == configuration.Ollama {
 		slog.Info("Ollama chosen as Answerer")
-		return NewOllama()
+		return NewOllama(config)
 	}
 
 	slog.Info("DumbAI chosen as Answerer")
 	return NewDumbAI()
 }
 
-func GetChunker(c configuration.Configuration) assistant.Chunker {
-	if c.Assistant.Chunker.Type == configuration.Recursive {
+func GetChunker(config configuration.Configuration) assistant.Chunker {
+	if config.Assistant.Chunker.Type == configuration.Recursive {
 		slog.Info("Recursive chosen as Chunker")
-		return NewRecursiveChunker(c)
+		return NewRecursiveChunker(config)
 	}
 
 	slog.Info("Fixed Size chosen as Chunker")
-	return NewFixedSizeChunker(c)
+	return NewFixedSizeChunker(config)
 }
 
-func GetSummarizer(c configuration.Configuration) archive.DocumentSummarizer {
-	if c.Assistant.Provider == configuration.OpenAI {
+func GetSummarizer(config configuration.Configuration) archive.DocumentSummarizer {
+	if config.Assistant.Provider == configuration.OpenAI {
 		slog.Info("OpenAI chosen as Summarizer")
-		return NewOpenAI(c)
+		return NewOpenAI(config)
 	}
 
-	if c.Assistant.Provider == configuration.Ollama {
+	if config.Assistant.Provider == configuration.Ollama {
 		slog.Info("Ollama chosen as Summarizer")
-		return NewOllama()
+		return NewOllama(config)
 	}
 
 	slog.Info("DumbAI chosen as Summarizer")
