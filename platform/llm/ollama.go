@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unterlagen/features/archive"
 	"unterlagen/features/assistant"
+	"unterlagen/platform/configuration"
 
 	"github.com/ollama/ollama/api"
 )
@@ -16,21 +17,18 @@ var (
 	_ archive.DocumentSummarizer = &Ollama{}
 )
 
-const (
-	embeddingModel     = "nomic-embed-text"
-	knowledgeBaseModel = "gemma:2b"
-	summarizationModel = "phi4:latest"
-)
-
 type Ollama struct {
 	client              *api.Client
 	summarizationFormat json.RawMessage
+	embeddingModel      string
+	knowledgeBaseModel  string
+	summarizationModel  string
 }
 
 // Generate implements assistant.Embedder.
 func (o *Ollama) Generate(text string) (assistant.Embeddings, error) {
 	response, err := o.client.Embeddings(context.Background(), &api.EmbeddingRequest{
-		Model:  embeddingModel,
+		Model:  o.embeddingModel,
 		Prompt: text,
 	})
 	if err != nil {
@@ -51,7 +49,7 @@ func (o *Ollama) Answer(question string, nodes []assistant.Node) (string, error)
 
 	var answer string
 	err := o.client.Generate(context.Background(), &api.GenerateRequest{
-		Model:  knowledgeBaseModel,
+		Model:  o.knowledgeBaseModel,
 		System: systemMessage,
 		Prompt: question,
 		Stream: new(bool),
@@ -74,7 +72,7 @@ func (o *Ollama) SummarizeText(text string) (archive.DocumentSummary, error) {
 
 	var response string
 	err := o.client.Generate(context.Background(), &api.GenerateRequest{
-		Model:  summarizationModel,
+		Model:  o.summarizationModel,
 		System: systemPrompt,
 		Prompt: text,
 		Stream: new(bool),
@@ -92,13 +90,15 @@ func (o *Ollama) SummarizeText(text string) (archive.DocumentSummary, error) {
 	return summary, err
 }
 
-func NewOllama() *Ollama {
+func NewOllama(config configuration.Configuration) *Ollama {
 	client, err := api.ClientFromEnvironment()
 	if err != nil {
 		panic(err)
 	}
 
-	return &Ollama{client: client, summarizationFormat: []byte(`
+	return &Ollama{
+		client:              client,
+		summarizationFormat: []byte(`
 	{
 	  "type": "object",
 	  "properties": {
@@ -112,5 +112,9 @@ func NewOllama() *Ollama {
 		  }
 		}
 	  }
-	}`)}
+	}`),
+		embeddingModel:      config.Assistant.Ollama.EmbeddingModel,
+		knowledgeBaseModel:  config.Assistant.Ollama.KnowledgeBaseModel,
+		summarizationModel:  config.Assistant.Ollama.SummarizationModel,
+	}
 }
