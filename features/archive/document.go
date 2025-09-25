@@ -54,6 +54,9 @@ func newDocument(filename string, filetype Filetype, filesize uint64, owner stri
 		Filename: filename,
 		Filetype: filetype,
 		Filesize: filesize,
+		Summary: DocumentSummary{
+			IsGenerating: true,
+		},
 		Owner:    owner,
 		FolderID: folderID,
 		TrashedAt: sql.NullTime{
@@ -87,8 +90,9 @@ func (document Document) IsTrashed() bool {
 }
 
 type DocumentSummary struct {
-	Overview  string   `json:"overview"`
-	KeyPoints []string `json:"key_points"`
+	Overview     string   `json:"overview"`
+	KeyPoints    []string `json:"key_points"`
+	IsGenerating bool     `json:"is_generating"`
 }
 
 type DocumentRepository interface {
