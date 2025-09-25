@@ -127,14 +127,24 @@ func (p *DocumentTaskProcessor) processSummarization(task common.Task) error {
 	// Skip summarization if no text is available
 	if document.Text == "" {
 		slog.Warn("skipping summarization - no text available", "document_id", document.ID)
+		document.Summary.IsGenerating = false
+		if err := p.repository.Save(document); err != nil {
+			return err
+		}
 		return nil
 	}
 
 	summary, err := p.summarizer.SummarizeText(document.Text)
 	if err != nil {
+		// Set IsGenerating to false even on error
+		document.Summary.IsGenerating = false
+		if saveErr := p.repository.Save(document); saveErr != nil {
+			slog.Error("failed to save document after summarization error", "document_id", document.ID, "save_error", saveErr.Error())
+		}
 		return err
 	}
 
+	summary.IsGenerating = false
 	document.Summary = summary
 	if err := p.repository.Save(document); err != nil {
 		return err
